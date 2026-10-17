@@ -61,6 +61,21 @@ const ART = {
     <rect x="46" y="70" width="8" height="52" fill="#9FB7C0"/><rect x="20" y="116" width="60" height="18" rx="9" fill="#4F6F7C"/><circle cx="66" cy="125" r="5" fill="#E35D52"/>
     <circle cx="50" cy="46" r="40" fill="rgba(255,255,255,.35)" stroke="#8FA9B4" stroke-width="4"/>
     <g class="fanblades">${[0, 120, 240].map(a => `<ellipse cx="50" cy="26" rx="10" ry="19" fill="#3FA2CF" transform="rotate(${a} 50 46)"/>`).join("")}</g><circle cx="50" cy="46" r="7" fill="#4F6F7C"/></svg>`,
+  sand: `<svg viewBox="0 0 120 70" aria-hidden="true"><defs><radialGradient id="gSand" cx=".45" cy=".3" r=".8"><stop offset="0" stop-color="#F3D9A4"/><stop offset="1" stop-color="#C9A064"/></radialGradient></defs>
+    <path d="M4 68 Q30 20 60 10 Q90 20 116 68Z" fill="url(#gSand)"/>${[[40, 50], [62, 34], [80, 54], [54, 58], [30, 62], [92, 62]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="1.6" fill="#B08852"/>`).join("")}</svg>`,
+  tent: `<svg viewBox="0 0 160 120" aria-hidden="true"><defs><linearGradient id="gTent" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#E8754F"/><stop offset=".5" stop-color="#F59A6B"/><stop offset="1" stop-color="#D2603D"/></linearGradient></defs>
+    <path d="M14 118 L80 10 L146 118Z" fill="url(#gTent)"/><path d="M80 10 L64 118 H96Z" fill="#9C4128"/><path d="M80 10 V118" stroke="#7E3320" stroke-width="2"/>
+    <path d="M80 10 L2 118 M80 10 L158 118" stroke="#8E6A43" stroke-width="1.6" stroke-dasharray="4 3" fill="none"/></svg>`,
+  stake: `<svg viewBox="0 0 24 50" aria-hidden="true"><rect x="8" y="2" width="8" height="34" rx="2" fill="#A26A3A"/><path d="M8 36 L12 48 L16 36Z" fill="#8E5A2E"/><rect x="5" y="2" width="14" height="5" rx="2" fill="#7A4A24"/></svg>`,
+  lantern: `<svg viewBox="0 0 50 74" aria-hidden="true"><path d="M15 12 Q25 0 35 12" fill="none" stroke="#4F6F7C" stroke-width="3"/>
+    <rect x="12" y="12" width="26" height="6" rx="2" fill="#4F6F7C"/><rect x="14" y="18" width="22" height="40" rx="5" fill="rgba(255,240,200,.35)" stroke="#4F6F7C" stroke-width="3"/>
+    <path class="flamel" d="M25 26 Q32 36 28 44 Q25 48 22 44 Q18 36 25 26Z" fill="#FFC94A" opacity=".25"/><rect x="10" y="58" width="30" height="8" rx="3" fill="#4F6F7C"/></svg>`,
+  heater: `<svg viewBox="0 0 90 80" aria-hidden="true"><rect x="6" y="10" width="78" height="56" rx="10" fill="#E7EEF1" stroke="#9FB2BA" stroke-width="3"/>
+    <g class="coils" stroke="#B9C6CC" stroke-width="5" stroke-linecap="round">${[22, 36, 50, 64].map(x => `<path d="M${x} 20 V56"/>`).join("")}</g>
+    <rect x="16" y="66" width="10" height="10" rx="2" fill="#7E9099"/><rect x="64" y="66" width="10" height="10" rx="2" fill="#7E9099"/><circle cx="76" cy="18" r="3" fill="#E35D52"/></svg>`,
+  lighthouse: `<svg viewBox="0 0 120 120" aria-hidden="true"><path d="M0 110 Q40 86 70 94 Q100 86 120 110Z" fill="#2E4B4F"/>
+    <path d="M50 96 L56 30 H72 L78 96Z" fill="#F3EDE0"/><path d="M52 74 H76 L77 84 H51Z M54 50 H74 L75 60 H53Z" fill="#E35D52"/>
+    <rect x="54" y="20" width="20" height="12" rx="2" fill="#FFE29A" class="lhlamp"/><path d="M52 20 L64 10 L76 20Z" fill="#4F6F7C"/></svg>`,
   island: `<svg viewBox="0 0 200 80" aria-hidden="true"><path d="M0 70 Q60 40 110 52 Q160 40 200 70Z" fill="#7FAF7A"/>
     <rect x="140" y="18" width="12" height="38" fill="#F3EDE0"/><rect x="140" y="28" width="12" height="6" fill="#E35D52"/><rect x="140" y="42" width="12" height="6" fill="#E35D52"/><path d="M136 18 L146 8 L156 18Z" fill="#4F6F7C"/>
     <path d="M60 52 Q58 34 64 22" stroke="#7E5630" stroke-width="3" fill="none"/><path d="M64 22 q-14 -2 -20 6 M64 22 q14 -4 20 4 M64 22 q-6 -10 -16 -10 M64 22 q8 -10 16 -8" stroke="#4E9D45" stroke-width="4" fill="none" stroke-linecap="round"/></svg>`
@@ -75,6 +90,14 @@ const ICON = {
   fan: '<circle cx="24" cy="20" r="14" fill="#E7F3F8" stroke="#8FA9B4" stroke-width="2"/><g fill="#3FA2CF"><ellipse cx="24" cy="12" rx="4" ry="7"/><ellipse cx="24" cy="12" rx="4" ry="7" transform="rotate(120 24 20)"/><ellipse cx="24" cy="12" rx="4" ry="7" transform="rotate(240 24 20)"/></g><rect x="22" y="33" width="4" height="8" fill="#8FA9B4"/><rect x="14" y="40" width="20" height="5" rx="2.5" fill="#4F6F7C"/>',
   sky: '<circle cx="31" cy="17" r="8" fill="#F7B32B"/><path d="M10 36 Q4 36 5 30 Q6 25 11 26 Q12 18 21 18 Q28 17 30 24 Q37 24 37 30 Q37 36 31 36Z" fill="#fff" stroke="#9FC3D4" stroke-width="2"/>',
   fruitc: '<circle cx="24" cy="27" r="14" fill="#E8463C"/><path d="M24 14 Q25 8 29 6" stroke="#6A3E1C" stroke-width="2.5" fill="none" stroke-linecap="round"/><path d="M26 11 Q33 7 37 12 Q31 15 26 11Z" fill="#5DAE4F"/><circle cx="19" cy="22" r="3.5" fill="#fff" opacity=".5"/>',
+  sand: '<path d="M6 40 Q24 10 42 40Z" fill="#E2BF84"/><path d="M30 10 L36 22 M33 9 L39 21" stroke="#8E5A2E" stroke-width="2.5" stroke-linecap="round"/><path d="M28 22 H44 L42 30 H30Z" fill="#4F9BC7"/>',
+  wind: '<path d="M6 18 H30 a6 6 0 1 0 -6 -6 M6 28 H38 a6 6 0 1 1 -6 6 M6 38 H24" stroke="#5FA7C9" stroke-width="3.5" fill="none" stroke-linecap="round"/>',
+  lantern: '<path d="M18 10 Q24 3 30 10" fill="none" stroke="#4F6F7C" stroke-width="2.5"/><rect x="15" y="10" width="18" height="4" rx="1.5" fill="#4F6F7C"/><rect x="16" y="14" width="16" height="22" rx="3" fill="#FFE7A0" stroke="#4F6F7C" stroke-width="2.5"/><path d="M24 19 Q28 25 25 30 Q24 32 23 30 Q20 25 24 19Z" fill="#F5A623"/><rect x="14" y="36" width="20" height="5" rx="2" fill="#4F6F7C"/>',
+  heater: '<rect x="6" y="10" width="36" height="26" rx="6" fill="#E7EEF1" stroke="#9FB2BA" stroke-width="2.5"/><path d="M15 15 V31 M22 15 V31 M29 15 V31 M36 15 V31" stroke="#F07A55" stroke-width="3" stroke-linecap="round"/><rect x="11" y="36" width="5" height="6" fill="#7E9099"/><rect x="32" y="36" width="5" height="6" fill="#7E9099"/>',
+  wheel: '<circle cx="24" cy="24" r="12" fill="none" stroke="#8E5A2E" stroke-width="4"/><circle cx="24" cy="24" r="4" fill="#8E5A2E"/>' + [0, 45, 90, 135].map(a => `<path d="M24 4 V44" stroke="#8E5A2E" stroke-width="3.5" stroke-linecap="round" transform="rotate(${a} 24 24)"/>`).join(""),
+  mountain: '<path d="M2 42 L18 14 L26 26 L32 18 L46 42Z" fill="#7B93A3"/><path d="M18 14 L13 23 L17 21 L20 24 L23 21Z M32 18 L29 23 L32 22 L35 24Z" fill="#fff"/>',
+  sunc: '<circle cx="24" cy="24" r="9" fill="#F7B32B"/>' + [0, 45, 90, 135, 180, 225, 270, 315].map(a => `<path d="M24 6 V10" stroke="#F7B32B" stroke-width="3" stroke-linecap="round" transform="rotate(${a} 24 24)"/>`).join(""),
+  star: '<path d="M24 5 L29 18 L43 19 L32 28 L36 42 L24 34 L12 42 L16 28 L5 19 L19 18Z" fill="#F5C451" stroke="#B9802A" stroke-width="1.5" stroke-linejoin="round"/>',
   ship: '<path d="M24 5 V34" stroke="#5D3B22" stroke-width="2.5"/><path d="M25 7 Q40 20 25 32Z" fill="#FFFDF5" stroke="#CDBF9F" stroke-width="1.5"/><path d="M23 10 Q12 21 23 31Z" fill="#F4EEDD" stroke="#CDBF9F" stroke-width="1.5"/><path d="M6 34 H42 L36 42 H12Z" fill="#8E5A2E"/><path d="M4 45 q5 -3 10 0 t10 0 t10 0 t10 0" stroke="#3FA2CF" stroke-width="2.5" fill="none"/>'
 };
 
@@ -82,6 +105,9 @@ const ICON = {
 const ITEMS = [
   { id: "cloud", name: "Облачко", svg: '<path d="M22 76 Q4 76 6 60 Q8 46 24 48 Q26 28 48 26 Q66 18 76 34 Q94 32 96 52 Q98 76 78 76Z" fill="#fff" stroke="#9FC3D4" stroke-width="3"/><path d="M24 66 Q50 72 80 64" stroke="#DCEAF2" stroke-width="4" fill="none" stroke-linecap="round"/>' },
   { id: "date", name: "Финик", svg: '<path d="M50 12 Q50 6 56 4" stroke="#6A3E1C" stroke-width="4" fill="none" stroke-linecap="round"/><ellipse cx="50" cy="54" rx="22" ry="38" fill="#8A4B1F"/><ellipse cx="42" cy="40" rx="6" ry="14" fill="#C27A45" opacity=".6"/><path d="M38 22 Q50 14 62 22" stroke="#5E3112" stroke-width="3" fill="none"/>' },
+  { id: "stone", name: "Горный камень", svg: '<path d="M14 78 Q8 50 30 36 Q50 20 72 32 Q94 44 88 70 Q80 90 50 88 Q22 88 14 78Z" fill="#8FA3AE"/><path d="M30 44 Q50 32 70 40" stroke="#B9C7CE" stroke-width="5" fill="none" stroke-linecap="round"/><path d="M40 66 L52 58 L62 70" stroke="#71848E" stroke-width="3" fill="none"/>' },
+  { id: "sunray", name: "Солнечный лучик", svg: '<circle cx="50" cy="50" r="20" fill="#F7B32B"/><circle cx="44" cy="44" r="7" fill="#FFE8A3"/>' + [0, 45, 90, 135, 180, 225, 270, 315].map(a => `<path d="M50 10 V22" stroke="#F7B32B" stroke-width="6" stroke-linecap="round" transform="rotate(${a} 50 50)"/>`).join("") },
+  { id: "star", name: "Путеводная звезда", svg: '<path d="M50 8 L61 36 L91 38 L68 57 L76 87 L50 70 L24 87 L32 57 L9 38 L39 36Z" fill="#F5C451" stroke="#B9802A" stroke-width="3" stroke-linejoin="round"/><circle cx="42" cy="40" r="5" fill="#FFF3CC"/>' },
   { id: "anchor", name: "Якорь", svg: '<circle cx="50" cy="18" r="9" fill="none" stroke="#4F6F7C" stroke-width="6"/><path d="M50 27 V86" stroke="#4F6F7C" stroke-width="8" stroke-linecap="round"/><path d="M34 42 H66" stroke="#4F6F7C" stroke-width="7" stroke-linecap="round"/><path d="M16 60 Q20 88 50 88 Q80 88 84 60" stroke="#4F6F7C" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M10 64 L16 54 L24 64Z M76 64 L84 54 L90 64Z" fill="#4F6F7C"/>' }
 ];
 
@@ -374,11 +400,203 @@ async function chShip() {
   return misses;
 }
 
+/* ============ ГЛАВА 4: ГОРЫ ============ */
+function mountainsLayer(h = 0.42) {
+  const g = el("div", "layer", stage, `<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><defs>
+    <linearGradient id="gMt1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9DB4C2"/><stop offset="1" stop-color="#7F98A8"/></linearGradient>
+    <linearGradient id="gMt2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7D93A2"/><stop offset="1" stop-color="#5F7889"/></linearGradient></defs>
+    <path d="M-20 200 L60 70 L110 120 L170 40 L240 130 L300 60 L420 200Z" fill="url(#gMt1)" opacity=".8"/>
+    <path d="M60 70 L46 93 L58 88 L66 98 L74 86Z M170 40 L152 70 L166 63 L176 74 L186 62Z M300 60 L284 86 L298 80 L306 90 L316 79Z" fill="#fff" opacity=".9"/>
+    <path d="M-20 200 L90 110 L150 150 L230 90 L330 160 L420 120 L420 200Z" fill="url(#gMt2)"/>
+    <path d="M230 90 L216 106 L228 102 L236 110 L245 101Z" fill="#fff" opacity=".85"/></svg>`);
+  g.style.bottom = "18%"; g.style.height = (h * 100) + "%";
+  return g;
+}
+async function chMountain() {
+  await toDark(); clearStage();
+  sky("linear-gradient(180deg,#5AAEE0 0%,#A6D8F2 60%,#E6F5FB 100%)");
+  const { W, H } = size(); sunAt(W * 0.2, H * 0.34, 120); clouds(2, 0.26, 0.4); mountainsLayer(); hills(0.26, ["#B9D98F", "#94C46E", "#73AE57"]); vignette();
+  const groundY = H * 0.86;
+  Snd.amb("wind"); fromDark(); await sleep(300);
+  await chapterTitle(4, "Горы", "m0");
+  await say("m1");
+
+  /* куча песка рассыпается */
+  const pile = obj("pile", ART.sand, W * 0.5, groundY - 20, 120, 70); pile.style.zIndex = 5; pile.style.transformOrigin = "50% 100%";
+  let k = 0.6; pile.style.transform = `scale(${k})`; fadeIn(pile);
+  cue("m2");
+  await taps(pile, 5, () => { k = Math.min(1.5, k + 0.18); pile.style.transform = `scale(${k})`; Snd.noise({ kind: "pink", type: "highpass", f: 2500, dur: 0.25, gain: 0.15 }); });
+  await sleep(400);
+  Snd.gust(2.5);
+  for (let i = 0; i < 4; i++) { puffs(pile._x + rnd(-30, 30), pile._y - 20 * k, 6, 140); await sleep(250); }
+  pile.style.transition = "transform 1.2s ease-in, opacity 1.2s"; pile.style.transform = "scale(1.4, .25)"; pile.style.opacity = ".5";
+  await sleep(900);
+  await say("m3");
+  fadeOut(pile);
+
+  /* палатка и колышки */
+  const tw = Math.min(W * 0.52, 220);
+  const tent = obj("tent", ART.tent, W * 0.5, groundY - tw * 0.36, tw, tw * 0.75); tent.style.zIndex = 5; tent.style.transformOrigin = "50% 100%";
+  fadeIn(tent);
+  const sway = tent.animate([{ rotate: "-5deg" }, { rotate: "6deg" }, { rotate: "-5deg" }], { duration: 900, iterations: Infinity, easing: "ease-in-out" });
+  Snd.gust(3);
+  const stakes = [-1, 1].map(d => { const st = obj("stake", ART.stake, W * 0.5 + d * tw * 0.56, groundY - 34, 26, 54); st.style.zIndex = 6; fadeIn(st); return st; });
+  cue("m4");
+  for (const st of stakes) {
+    await tapOnce(st);
+    for (let i = 0; i < 3; i++) { Snd.thud(0.5); Snd.noise({ f: 1600, q: 3, dur: 0.05, gain: 0.25, attack: 0.002 }); await move(st, st._x, st._y + 6, 120, "ease-in"); await sleep(120); }
+  }
+  sway.cancel(); tent.animate([{ rotate: "2deg" }, { rotate: "0deg" }], { duration: 400 });
+  await say("m5");
+  await say("m6");
+  const misses = await choice("mq", [{ id: "mqa", icon: ICON.sand }, { id: "mqb", icon: ICON.wind }, { id: "mqc", ar: true, ok: true }], "mq_ok");
+  await say("m_quran");
+  await ayahCard("78:6-7");
+  await say("m_end", { btn: "Аллаху Акбар" });
+  hideCap(); await award("stone");
+  return misses;
+}
+
+/* ============ ГЛАВА 5: СОЛНЦЕ-СВЕТИЛЬНИК ============ */
+function glowSpot(x, y, r, color = "255,214,130") {
+  const g = el("div", "glowspot");
+  Object.assign(g.style, { left: (x - r) + "px", top: (y - r) + "px", width: 2 * r + "px", height: 2 * r + "px", background: `radial-gradient(circle, rgba(${color},.75) 0%, rgba(${color},.3) 45%, rgba(${color},0) 70%)` });
+  g.animate([{ opacity: 0, transform: "scale(.6)" }, { opacity: 1, transform: "scale(1)" }], { duration: 600, easing: "ease-out" });
+  return g;
+}
+async function chSunLamp() {
+  await toDark(); clearStage();
+  const sk = sky("linear-gradient(180deg,#0E2238 0%,#1D3D5C 60%,#35577A 100%)");
+  const { W, H } = size(); hills(0.34, ["#5D7F6A", "#4C6E5A", "#3B5C4A"]);
+  const stars = el("div", "layer", stage, `<svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><g class="twinkle" fill="#FFF6DD">${Array.from({ length: 40 }, () => `<circle cx="${rnd(0, 400).toFixed(0)}" cy="${rnd(0, 260).toFixed(0)}" r="${rnd(0.6, 1.6).toFixed(1)}"/>`).join("")}</g></svg>`);
+  stars.style.inset = "0 0 40% 0";
+  const frost = el("div", "layer", stage, Array.from({ length: 26 }, () => `<i class="frost" style="left:${rnd(2, 98).toFixed(1)}%;top:${rnd(10, 90).toFixed(1)}%"></i>`).join(""));
+  frost.style.bottom = "0"; frost.style.height = "30%";
+  const night = el("div", "nightveil"); vignette();
+  const groundY = H * 0.84;
+  Snd.amb("wind", 0.6); fromDark(); await sleep(300);
+  await chapterTitle(5, "Солнце-светильник", "l0");
+  await say("l1");
+
+  const lamp = obj("lamp", ART.lantern, W * 0.28, groundY - 30, 50, 74); lamp.style.zIndex = 8; fadeIn(lamp);
+  cue("l2"); await tapOnce(lamp);
+  lamp.querySelector(".flamel").setAttribute("opacity", "1"); Snd.noise({ type: "highpass", f: 2500, dur: 0.08, gain: 0.3, attack: 0.002 });
+  const g1 = glowSpot(lamp._x, lamp._y, 110); g1.style.zIndex = 7;
+  await say("l3");
+
+  const heat = obj("heater", ART.heater, W * 0.72, groundY - 24, 80, 72); heat.style.zIndex = 8; fadeIn(heat);
+  cue("l4"); await tapOnce(heat);
+  heat.querySelectorAll(".coils path").forEach(c => c.setAttribute("stroke", "#F07A55")); Snd.hum(1.2);
+  const g2 = glowSpot(heat._x, heat._y, 100, "255,150,90"); g2.style.zIndex = 7;
+  await say("l5");
+
+  cue("l6");
+  const field = el("div", "tapfield"); field.style.zIndex = 6;
+  let placed = 0;
+  await new Promise(r => {
+    const end = () => { field.remove(); r(); };
+    field.addEventListener("pointerdown", ev => {
+      const p = local(ev); if (p.y < H * 0.45 || placed >= 5) return;
+      placed++; Snd.tap();
+      const l = obj("lamp", ART.lantern, p.x, p.y, 34, 50); l.style.zIndex = 8; l.querySelector(".flamel").setAttribute("opacity", "1"); fadeIn(l);
+      const g = glowSpot(p.x, p.y, 70); g.style.zIndex = 7;
+      if (placed >= 5) setTimeout(end, 600);
+    });
+    setTimeout(end, 15000);
+  });
+  await say("l7");
+  await say("l8", { btn: "Смотрю" });
+  hideCap();
+
+  /* восход: светло и тепло сразу везде */
+  const sun = sunAt(W * 0.5, H * 0.75, 170); stage.insertBefore(sun, sk.nextSibling);   // за холмами
+  sun.animate([{ top: (H * 0.75) + "px" }, { top: (H * 0.3) + "px" }], { duration: 3500, easing: "ease-out", fill: "forwards" });
+  sk.style.transition = "background 3s"; sk.style.background = "linear-gradient(180deg,#5AB2E4 0%,#A9DCF3 60%,#F3E8C4 100%)";
+  [night, stars, frost].forEach(e => { e.style.transition = "opacity 3s"; e.style.opacity = "0"; });
+  stage.querySelectorAll(".glowspot").forEach(g => { g.style.transition = "opacity 2s"; g.style.opacity = "0"; });
+  Snd.amb("meadow", 0.8); Snd.sparkle();
+  await sleep(3200);
+  await say("l9");
+  const misses = await choice("lq", [{ id: "lqa", icon: ICON.lantern }, { id: "lqc", ar: true, ok: true }, { id: "lqb", icon: ICON.heater }], "lq_ok");
+  await say("l_quran");
+  await ayahCard("71:15-16");
+  await say("l_end", { btn: "Альхамдулиллях" });
+  hideCap(); await award("sunray");
+  return misses;
+}
+
+/* ============ ГЛАВА 6: ЗВЁЗДЫ ============ */
+async function chStars() {
+  await toDark(); clearStage();
+  sky("linear-gradient(180deg,#081A2C 0%,#12304A 60%,#1D4462 100%)");
+  const { W, H } = size();
+  const seaTop = H * 0.6;
+  const stars = el("div", "layer", stage, `<svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><g class="twinkle" fill="#FFF6DD">${Array.from({ length: 70 }, () => `<circle cx="${rnd(0, 400).toFixed(0)}" cy="${rnd(0, 280).toFixed(0)}" r="${rnd(0.6, 1.8).toFixed(1)}"/>`).join("")}</g></svg>`);
+  stars.style.inset = "0 0 40% 0"; stars.style.opacity = "0";
+  const guide = obj("guide", `<svg viewBox="0 0 60 60" aria-hidden="true"><circle cx="30" cy="30" r="28" fill="rgba(255,236,170,.25)"/><path d="M30 6 L34 26 L54 30 L34 34 L30 54 L26 34 L6 30 L26 26Z" fill="#FFF3C4"/></svg>`, W * 0.78, H * 0.2, 60, 60);
+  guide.style.opacity = "0"; guide.style.zIndex = 2;
+  const wave = (cls, top, fill, flip) => `<svg class="wave ${cls}" viewBox="0 0 800 44" preserveAspectRatio="none" style="top:${top}"><path d="M0 22 ${Array.from({ length: 16 }, (_, i) => `Q${i * 50 + 25} ${(i % 2) ^ flip ? 38 : 6} ${i * 50 + 50} 22`).join(" ")} V44 H0Z" fill="${fill}"/></svg>`;
+  const lh = obj("lighthouse", ART.lighthouse, W * 0.86, seaTop - 40, 110, 110); lh.style.zIndex = 2;
+  const sea = el("div", "sea night", stage, wave("", "-22px", "#1F4E6E", 0) + wave("w2", "18%", "#183F5A", 1) + wave("w3", "52%", "#123349", 0));
+  sea.style.top = seaTop + "px";
+  const cl = [0.15, 0.45, 0.78].map((fx, i) => { const c = el("div", "cloud dark", stage, ART.cloud); Object.assign(c.style, { left: (W * fx - 110) + "px", top: (H * (0.12 + i * 0.05)) + "px", width: "240px", height: "120px", animation: "none", zIndex: 3 }); return c; });
+  const sz = Math.min(W * 0.42, 190);
+  const ship = obj("ship", `<div class="bob" style="width:100%;height:100%">${ART.ship}</div>`, W * 0.3, seaTop - sz * 0.2, sz, sz); ship.style.zIndex = 5;
+  vignette();
+  Snd.amb("sea", 0.7); fromDark(); await sleep(300);
+  await chapterTitle(6, "Звёзды", "z0");
+  await say("z1");
+
+  const lamp = obj("lamp", ART.lantern, ship._x + sz * 0.42, ship._y + sz * 0.05, 34, 50); lamp.style.zIndex = 6;
+  cue("z2"); await tapOnce(lamp);
+  lamp.querySelector(".flamel").setAttribute("opacity", "1");
+  const g = glowSpot(lamp._x, lamp._y + 20, 90); g.style.zIndex = 5;
+  await say("z3");
+
+  cue("z4");
+  const field = el("div", "tapfield"); field.style.zIndex = 4;
+  await new Promise(r => {
+    let fin = false; const end = () => { if (fin) return; fin = true; field.remove(); r(); };
+    field.addEventListener("pointerdown", ev => {
+      const p = local(ev); if (p.y > seaTop - 20) return;
+      Snd.sparkle();
+      const st = obj("mystar", `<svg viewBox="0 0 48 48" aria-hidden="true">${ICON.star}</svg>`, p.x, p.y, 40, 40); st.style.zIndex = 4;
+      st.animate([{ opacity: 1, transform: "scale(1)" }, { opacity: 1, transform: "scale(1.1)", offset: .3 }, { opacity: 0, transform: "scale(.2) translateY(60px)" }], { duration: 1800, easing: "ease-in", fill: "forwards" });
+      setTimeout(end, 1900);
+    });
+    setTimeout(end, 15000);
+  });
+  await say("z5");
+  await say("z6", { btn: "Смотрю" });
+  hideCap();
+
+  cl.forEach((c, i) => c.animate([{ transform: "translateX(0)", opacity: 1 }, { transform: `translateX(${(i % 2 ? 1 : -1) * W * 0.8}px)`, opacity: 0 }], { duration: 3000, easing: "ease-in", fill: "forwards" }));
+  Snd.gust(3);
+  stars.style.transition = "opacity 3s"; stars.style.opacity = "1";
+  guide.style.transition = "opacity 3s"; guide.style.opacity = "1";
+  await sleep(2600);
+  const path = el("div", "layer", stage, `<svg viewBox="0 0 ${W} ${H}" aria-hidden="true"><path d="M${guide._x} ${guide._y + 26} L${lh._x} ${lh._y - 40}" stroke="#FFF3C4" stroke-width="2.5" stroke-dasharray="6 7" fill="none" opacity=".8"/></svg>`);
+  path.style.inset = "0"; path.style.zIndex = 2; fadeIn(path, 900);
+  Snd.sparkle();
+  await say("z7");
+  cue("z8"); await tapOnce(ship);
+  Snd.gust(3);
+  await move(ship, lh._x - sz * 0.95, ship._y, 4200, "ease-in-out");
+  lh.querySelector(".lhlamp").setAttribute("fill", "#FFF6C9"); const lg = glowSpot(lh._x, lh._y - 38, 70); lg.style.zIndex = 3;
+  await say("z9");
+  const misses = await choice("zq", [{ id: "zqa", icon: ICON.lantern }, { id: "zqb", icon: ICON.wheel }, { id: "zqc", ar: true, ok: true }], "zq_ok");
+  await say("z_quran");
+  await ayahCard("16:16");
+  await say("z_end");
+  hideCap(); await award("star");
+  return misses;
+}
+
 /* ============ ФИНАЛ ============ */
 async function chFinal() {
   await toDark(); clearStage();
   sky("linear-gradient(180deg,#24557A 0%,#C98A6B 55%,#F6D79A 100%)");
-  const { W, H } = size(); sunAt(W * 0.5, H * 0.66, 170); hills(0.3, ["#7E9E78", "#5E8A64", "#3F6E52"]); vignette();
+  const { W, H } = size(); sunAt(W * 0.5, H * 0.44, 170); hills(0.3, ["#7E9E78", "#5E8A64", "#3F6E52"]); vignette();
   el("div", "items-row", stage, ITEMS.filter(i => Save.d.items.includes(i.id)).map(i => `<svg viewBox="0 0 100 100" aria-hidden="true">${i.svg}</svg>`).join(""));
   Snd.amb("wind", 0.6); fromDark(); await sleep(500);
   celebrate();
@@ -392,11 +610,14 @@ async function chFinal() {
 const CHAPTERS = [
   { id: "sky", name: "Небо без опор", icon: ICON.sky, fn: chSky },
   { id: "fruit", name: "Разные плоды", icon: ICON.fruitc, fn: chFruit },
-  { id: "ship", name: "Корабль и ветер", icon: ICON.ship, fn: chShip }
+  { id: "ship", name: "Корабль и ветер", icon: ICON.ship, fn: chShip },
+  { id: "mountain", name: "Горы", icon: ICON.mountain, fn: chMountain },
+  { id: "sunlamp", name: "Солнце-светильник", icon: ICON.sunc, fn: chSunLamp },
+  { id: "stars", name: "Звёзды", icon: ICON.star, fn: chStars }
 ];
 /* Главы, которых ещё нет, записаны просто названием и показываются как "скоро" */
 const WORLDS = [
-  { t: "Кто всё создал?", s: "Знамения Аллаха вокруг нас", ch: ["sky", "fruit", "ship", "Горы", "Сладкая и солёная вода", "День и ночь", "Звёзды"] },
+  { t: "Кто всё создал?", s: "Знамения Аллаха вокруг нас", ch: ["sky", "fruit", "ship", "mountain", "sunlamp", "stars", "Сладкая и солёная вода", "День и ночь"] },
   { t: "Только Аллаху", s: "Кому поклоняться и у кого просить помощи", ch: ["Дуа Юнуса", "Аллах слышит всех", "Никто, кроме Аллаха", "Защита у Аллаха"] },
   { t: "Во что верит мусульманин", s: "Шесть столпов веры", ch: ["Вера в Аллаха", "Ангелы", "Книги", "Пророки", "Судный день", "Предопределение"] },
   { t: "Как живёт мусульманин", s: "Пять столпов ислама", ch: ["Шахада", "Омовение", "Намаз", "Пост", "Закят", "Хадж"] },
