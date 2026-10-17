@@ -51,13 +51,14 @@ python3 tools/tts.py --speaker xenia b1    # одна реплика одним 
 Если файла озвучки нет, игра читает реплику голосом телефона.
 
 ## Где опубликована
-Игра работает по адресу **https://рахмат.рус/igra/** и лежит в репозитории сайта `vseum/rahmat`, в папке `igra/`.
-Сайт собирается и выкладывается через Timeweb Cloud «Приложения» из ветки `main`.
+Игра работает по адресу **https://рахмат.рус/igra/**. Домен рахмат.рус подключён к приложению Timeweb Cloud
+из репозитория `vseum/jarvis-azata` (сайт-трекер). Игра лежит там в папке `web/igra/`, а `web/server.js` отдаёт её
+по адресу `/igra/`. Timeweb пересобирает сайт при каждом пуше в `main`.
 
 **Обновить игру на сайте:**
 ```
-sh tools/publish.sh ../rahmat     # копирует игру в ../rahmat/igra
-cd ../rahmat && git add igra && git commit -m "Обновление игры" && git push
+sh tools/publish.sh ../jarvis-azata/web     # копирует игру в ../jarvis-azata/web/igra
+cd ../jarvis-azata && git add web/igra && git commit -m "Обновление игры" && git push
 ```
 
 ## Другой вариант: GitHub Pages (бесплатно)
