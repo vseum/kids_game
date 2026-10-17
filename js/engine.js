@@ -158,8 +158,9 @@ const Voice = {
   /* Промис завершается, когда реплика договорена */
   speak(id) {
     return new Promise(res => {
-      let done = false; const fin = () => { if (!done) { done = true; res(); } };
+      let done = false; const fin = () => { if (!done) { done = true; cap.classList.remove("talk"); res(); } };
       this.stop();
+      if (this.on) cap.classList.add("talk");
       if (!this.on) return setTimeout(fin, 500);
       if (this.have.has(id) && Snd.ac) {
         this.file(id).then(b => {
@@ -211,11 +212,12 @@ function choice(qid, opts, okId) {
     showCap(qid);
     let picked = false, misses = 0;
     const btns = opts.map(o => {
-      const b = button(`<span class="oi${o.ar ? " ar" : ""}">${o.icon || ""}</span><span>${L(o.id).replace(/\.$/, "")}</span>`, "opt");
+      const ic = o.ar ? "الله" : `<svg viewBox="0 0 48 48" aria-hidden="true">${o.icon || ""}</svg>`;
+      const b = button(`<span class="oi${o.ar ? " ar" : ""}">${ic}</span><span>${L(o.id).replace(/\.$/, "")}</span>`, "opt");
       b.onclick = async () => {
         picked = true; btns.forEach(x => x.classList.remove("reading"));
         if (o.ok) {
-          Snd.tap(); celebrate(); b.classList.add("yes");
+          Snd.tap(); celebrate(); b.classList.add("yes"); b.disabled = true;
           btns.forEach(x => { x.onclick = null; if (x !== b) x.remove(); });
           capNote.textContent = L(okId);
           const p = Voice.speak(okId); await sleep(500);
@@ -237,6 +239,9 @@ function choice(qid, opts, okId) {
 }
 
 /* ============ КАРТОЧКА АЯТА ============ */
+const STAR8 = '<path d="M20 2l5 8 9-2-2 9 8 5-8 5 2 9-9-2-5 8-5-8-9 2 2-9-8-5 8-5-2-9 9 2z" fill="none" stroke="#E6A93A" stroke-width="1.6"/><circle cx="20" cy="20" r="4" fill="#E6A93A"/>';
+const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.8 6 6.5.7-4.9 4.4 1.4 6.4L12 16.7 6.2 20l1.4-6.4L2.7 9.2l6.5-.7z" fill="#F5C451" stroke="#B9802A" stroke-width="1.2" stroke-linejoin="round"/></svg>';
+const STAR_OFF = STAR.replace('fill="#F5C451" stroke="#B9802A"', 'fill="#E9DFC8" stroke="#CDBF9F"');
 const AR_DIGITS = n => String(n).replace(/\d/g, d => "٠١٢٣٤٥٦٧٨٩"[d]);
 function ayahCard(key) {
   return new Promise(res => {
@@ -245,7 +250,7 @@ function ayahCard(key) {
     const firstNum = +key.split(":")[1].split("-")[0];
     const ar = a.parts.map((p, i) => `${p.ar} <span class="num">﴿${AR_DIGITS(firstNum + i)}﴾</span>`).join(" ");
     const ov = el("div", "ayah", app,
-      `<div class="acard"><p class="ref">${a.ref}</p><p class="ar" dir="rtl" lang="ar">${ar}</p>` +
+      `<div class="acard">${["tl", "tr", "bl", "br"].map(c => `<svg class="star8 ${c}" viewBox="0 0 40 40" aria-hidden="true">${STAR8}</svg>`).join("")}<p class="lbl">Аят из Корана</p><p class="ref">${a.ref}</p><p class="ar" dir="rtl" lang="ar">${ar}</p>` +
       `<p class="tr"></p><p class="src">Перевод смыслов: Эльмир Кулиев</p>` +
       `<div class="abtns"><button class="btn teal" data-a="qari">▶ Чтец</button><button class="btn teal" data-a="tr">▶ Перевод</button><button class="btn" data-a="next">Дальше</button></div></div>`);
     ov.querySelector(".tr").textContent = L(a.tr);
@@ -265,6 +270,16 @@ function ayahCard(key) {
       else { stopAll(); ov.classList.remove("on"); setTimeout(() => ov.remove(), 400); res(); }
     });
   });
+}
+
+/* ============ ЗАСТАВКА ГЛАВЫ ============ */
+async function chapterTitle(num, name, lineId) {
+  hideCap();
+  const t = el("div", "chtitle", app, `<div><small>Глава ${num}</small><b>${name}</b><svg class="orn" viewBox="0 0 120 16" aria-hidden="true"><path d="M0 8h44M76 8h44" stroke="#F5C451" stroke-width="1.5"/><path d="M60 1l4 7-4 7-4-7z" fill="#F5C451"/><circle cx="50" cy="8" r="2" fill="#F5C451"/><circle cx="70" cy="8" r="2" fill="#F5C451"/></svg></div>`);
+  requestAnimationFrame(() => requestAnimationFrame(() => t.classList.add("on")));
+  Snd.sparkle();
+  await Promise.all([Voice.speak(lineId), sleep(2200)]);
+  t.classList.remove("on"); await sleep(600); t.remove();
 }
 
 /* ============ ВЗАИМОДЕЙСТВИЯ ============ */
@@ -311,11 +326,11 @@ async function award(itemId) {
   const it = ITEMS.find(i => i.id === itemId);
   if (!Save.d.items.includes(itemId)) { Save.d.items.push(itemId); Save.save(); }
   celebrate(); updateBag(true);
-  await toast(`<svg viewBox="0 0 100 100" aria-hidden="true">${it.svg}</svg><b>${it.name}</b><i>Новое сокровище в сумке</i>`, 2400);
+  await toast(`<svg class="item" viewBox="0 0 100 100" aria-hidden="true">${it.svg}</svg><b>${it.name}</b><i>Новое сокровище в сумке</i>`, 2400);
 }
 async function starsToast(n) {
   if (n === 3) celebrate(); else Snd.sparkle();
-  await toast(`<b>Глава пройдена!</b><div class="st">${"★".repeat(n)}${"☆".repeat(3 - n)}</div>${n < 3 ? "<i>Сыграй ещё раз, чтобы собрать три звезды</i>" : ""}`, n < 3 ? 2600 : 2000);
+  await toast(`<b>Глава пройдена!</b><div class="st">${STAR.repeat(n)}${STAR_OFF.repeat(3 - n)}</div>${n < 3 ? "<i>Сыграй ещё раз, чтобы собрать три звезды</i>" : ""}`, n < 3 ? 2800 : 2300);
 }
 
 /* ============ ЛИСТЫ: главы и сокровища ============ */
@@ -327,21 +342,26 @@ function sheet(html) {
 }
 function chaptersSheet() {
   return new Promise(res => {
-    const html = WORLDS.map(w => `<div class="world"><h3>${w.t}<small>${w.s}</small></h3><div class="chlist">` +
-      w.ch.map(c => {
-        const ch = CHAPTERS.find(x => x.id === c);
-        if (!ch) return `<div class="ch soon">${c}<span class="stars">скоро</span></div>`;
-        const st = Save.d.done[c] || 0;
-        return `<button class="ch" data-id="${c}">${ch.name}<span class="stars">${st ? "★".repeat(st) + "☆".repeat(3 - st) : "играть"}</span></button>`;
-      }).join("") + `</div></div>`).join("");
-    const ov = sheet(`<h2>Главы</h2>${html}<div class="row"><button class="btn ghost" id="shClose">Закрыть</button></div>`);
+    const html = WORLDS.map((w, wi) => {
+      const ready = w.ch.filter(c => CHAPTERS.some(x => x.id === c)), done = ready.filter(c => Save.d.done[c]).length;
+      return `<div class="world"><div class="whead"><span class="wnum">${wi + 1}</span><div><b>${w.t}</b><small>${w.s}</small>` +
+        `${ready.length ? `<div class="wbar"><i style="width:${Math.round(done / w.ch.length * 100)}%"></i></div>` : ""}</div></div><div class="chlist">` +
+        w.ch.map(c => {
+          const ch = CHAPTERS.find(x => x.id === c);
+          if (!ch) return `<div class="ch soon"><span class="ci">${LOCK}</span><span>${c}<span class="stars">скоро</span></span></div>`;
+          const st = Save.d.done[c] || 0;
+          return `<button class="ch" data-id="${c}"><span class="ci"><svg viewBox="0 0 48 48" aria-hidden="true">${ch.icon}</svg></span><span>${ch.name}<span class="stars">${st ? "★".repeat(st) + "☆".repeat(3 - st) : "играть"}</span></span></button>`;
+        }).join("") + `</div></div>`;
+    }).join("");
+    const ov = sheet(`<h2>Главы</h2>${html}<div class="row"><button class="btn line" id="shClose">Закрыть</button></div>`);
     ov.querySelectorAll("button.ch").forEach(b => b.onclick = () => { Snd.tap(); ov.close(); res(CHAPTERS.findIndex(c => c.id === b.dataset.id)); });
     ov.querySelector("#shClose").onclick = () => { Snd.tap(); ov.close(); res(null); };
   });
 }
+const LOCK = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2.5" fill="#B7C6CC"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="#B7C6CC" stroke-width="2.2"/></svg>';
 function bagSheet() {
   const html = ITEMS.map(i => `<div class="${Save.d.items.includes(i.id) ? "" : "lk"}"><svg viewBox="0 0 100 100" aria-hidden="true">${i.svg}</svg>${i.name}</div>`).join("");
-  const ov = sheet(`<h2>Мои сокровища</h2><div class="bag">${html}</div><p class="small">Сокровища даются за пройденные главы</p><div class="row"><button class="btn ghost">Закрыть</button></div>`);
+  const ov = sheet(`<h2>Мои сокровища</h2><div class="bag">${html}</div><p class="small">Сокровища даются за пройденные главы</p><div class="row"><button class="btn line">Закрыть</button></div>`);
   ov.querySelector("button").onclick = () => { Snd.tap(); ov.close(); };
 }
 
