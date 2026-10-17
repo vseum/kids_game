@@ -435,11 +435,13 @@ async function pickChapter() {
   play(k, false);
 }
 
-Save.load(); Save.d.items = Save.d.items.filter(i => ITEMS.some(x => x.id === i)); updateBag(false); Voice.load();
+Save.load(); Save.d.items = Save.d.items.filter(i => ITEMS.some(x => x.id === i)); updateBag(false);
+Voice.load().then(() => { $("#goVoice b").textContent = voiceName(); });
 showStart();
 $("#go").onclick = () => { Snd.tap(); play(0, true); };
 $("#goCont").onclick = () => { Snd.tap(); const k = nextUndone(); if (k != null) play(k, false); };
 $("#goCh").onclick = () => { Snd.tap(); pickChapter(); };
+$("#goVoice").onclick = async () => { Snd.tap(); await voiceSheet(); $("#goVoice b").textContent = voiceName(); };
 $("#tHome").onclick = () => { Snd.tap(); pickChapter(); };
 $("#tBag").onclick = () => { Snd.tap(); bagSheet(); };
 $("#tVoice").onclick = e => { Voice.on = !Voice.on; e.currentTarget.setAttribute("aria-pressed", Voice.on); if (!Voice.on) Voice.stop(); };

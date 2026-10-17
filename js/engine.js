@@ -136,11 +136,39 @@ function unlockAudio() {
 document.addEventListener("visibilitychange", () => { if (Snd.ac && !document.hidden) Snd.ac.resume(); });
 
 /* ============ ГОЛОС: записи из папки voice/, а если их нет - голос телефона ============ */
+/* Голоса озвучки: файлы лежат в voice/<id>/ */
+const VOICES = [
+  { id: "xenia", name: "Ксения", g: "женский" },
+  { id: "baya", name: "Бая", g: "женский" },
+  { id: "kseniya", name: "Ксюша", g: "женский" },
+  { id: "aidar", name: "Айдар", g: "мужской" },
+  { id: "eugene", name: "Евгений", g: "мужской" }
+];
 const Voice = {
-  on: true, have: new Set(), cache: {}, cur: null, ru: null,
+  on: true, sp: "xenia", have: new Set(), cache: {}, cur: null, ru: null,
   async load() {
-    try { const r = await fetch("voice/manifest.json", { cache: "no-cache" }); if (r.ok) this.have = new Set(await r.json()); } catch (e) {}
+    let saved = null;
+    try { saved = new URLSearchParams(location.search).get("golos") || localStorage.getItem("ayaty_voice"); } catch (e) {}
+    if (VOICES.some(v => v.id === saved)) this.sp = saved;
+    await this.manifest();
     this.pick(); if ("speechSynthesis" in window) speechSynthesis.onvoiceschanged = () => this.pick();
+  },
+  async manifest() {
+    this.have = new Set();
+    try { const r = await fetch("voice/" + this.sp + "/manifest.json", { cache: "no-cache" }); if (r.ok) this.have = new Set(await r.json()); } catch (e) {}
+  },
+  /* Послушать реплику другим голосом, не меняя выбранный */
+  async preview(sp, id) {
+    this.stop();
+    try {
+      const r = await fetch("voice/" + sp + "/" + id + ".mp3"); if (!r.ok) return;
+      const b = await Snd.ac.decodeAudioData(await r.arrayBuffer());
+      this.stop(); const s = Snd.ac.createBufferSource(); s.buffer = b; s.connect(Snd.ac.destination); s.start(); this.cur = s;
+    } catch (e) {}
+  },
+  async setSpeaker(sp) {
+    this.sp = sp; try { localStorage.setItem("ayaty_voice", sp); } catch (e) {}
+    await this.manifest();
   },
   pick() {
     if (!("speechSynthesis" in window)) return;
@@ -152,8 +180,9 @@ const Voice = {
     if (this.cur) { try { this.cur.stop(); } catch (e) {} this.cur = null; }
   },
   async file(id) {
-    if (!this.cache[id]) { const r = await fetch("voice/" + id + ".mp3"); if (!r.ok) throw new Error("нет файла"); this.cache[id] = await Snd.ac.decodeAudioData(await r.arrayBuffer()); }
-    return this.cache[id];
+    const key = this.sp + "/" + id;
+    if (!this.cache[key]) { const r = await fetch("voice/" + key + ".mp3"); if (!r.ok) throw new Error("нет файла"); this.cache[key] = await Snd.ac.decodeAudioData(await r.arrayBuffer()); }
+    return this.cache[key];
   },
   /* Промис завершается, когда реплика договорена */
   speak(id) {
@@ -359,6 +388,24 @@ function chaptersSheet() {
   });
 }
 const LOCK = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2.5" fill="#B7C6CC"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="#B7C6CC" stroke-width="2.2"/></svg>';
+/* Выбор голоса: каждый можно послушать */
+function voiceSheet() {
+  return new Promise(res => {
+    const rows = VOICES.map(v => `<div class="vrow${v.id === Voice.sp ? " on" : ""}" data-id="${v.id}"><button class="vplay" aria-label="Послушать">▶</button>` +
+      `<span><b>${v.name}</b><small>${v.g} голос</small></span><button class="btn vpick">${v.id === Voice.sp ? "Выбран" : "Выбрать"}</button></div>`).join("");
+    const ov = sheet(`<h2>Голос</h2><div class="vlist">${rows}</div><p class="small">Нажми ▶, чтобы послушать</p><div class="row"><button class="btn line" id="vClose">Готово</button></div>`);
+    ov.querySelectorAll(".vrow").forEach(r => {
+      const id = r.dataset.id;
+      r.querySelector(".vplay").onclick = () => { Snd.tap(); unlockAudio(); Voice.preview(id, "intro1"); };
+      r.querySelector(".vpick").onclick = async () => {
+        Snd.tap(); Voice.stop(); await Voice.setSpeaker(id);
+        ov.querySelectorAll(".vrow").forEach(x => { const on = x.dataset.id === id; x.classList.toggle("on", on); x.querySelector(".vpick").textContent = on ? "Выбран" : "Выбрать"; });
+      };
+    });
+    ov.querySelector("#vClose").onclick = () => { Snd.tap(); Voice.stop(); ov.close(); res(); };
+  });
+}
+function voiceName() { return (VOICES.find(v => v.id === Voice.sp) || VOICES[0]).name; }
 function bagSheet() {
   const html = ITEMS.map(i => `<div class="${Save.d.items.includes(i.id) ? "" : "lk"}"><svg viewBox="0 0 100 100" aria-hidden="true">${i.svg}</svg>${i.name}</div>`).join("");
   const ov = sheet(`<h2>Мои сокровища</h2><div class="bag">${html}</div><p class="small">Сокровища даются за пройденные главы</p><div class="row"><button class="btn line">Закрыть</button></div>`);

@@ -147,6 +147,16 @@ button { font: inherit; cursor: pointer; border: 0; color: inherit; background: 
 }
 .sub { margin: 0 auto 26px; max-width: 300px; font-size: 17px; line-height: 1.4; color: rgba(255,255,255,.82); font-weight: 700; }
 .sbtns { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.chip { margin-top: 2px; padding: 8px 16px; border-radius: 18px; color: rgba(255,255,255,.75); font-weight: 800; font-size: 15px; background: rgba(255,255,255,.08); }
+.chip b { color: var(--gold); }
+.vlist { display: flex; flex-direction: column; gap: 8px; }
+.vrow { display: flex; align-items: center; gap: 12px; padding: 10px; border-radius: 18px; background: #fff; box-shadow: 0 3px 0 #E6D7B5; }
+.vrow.on { box-shadow: 0 3px 0 #E6D7B5, 0 0 0 3px var(--gold); }
+.vrow span { flex: 1; } .vrow b { display: block; font-size: 18px; color: var(--ink); } .vrow small { color: var(--muted); font-weight: 700; font-size: 13.5px; }
+.vplay { flex: none; width: 46px; height: 46px; border-radius: 50%; background: linear-gradient(160deg, #2B6E8A, #1C5169); color: #fff; font-size: 18px; padding-left: 3px; }
+.vplay:active { transform: scale(.92); }
+.vpick { min-height: 42px; font-size: 15px; padding: 0 14px; }
+.vrow.on .vpick { background: #DCF2E3; color: #2A7A4B; box-shadow: none; }
 .hint-sound { margin: 20px 0 0; color: rgba(255,255,255,.6); font-weight: 700; font-size: 14px; }
 .credits { margin: 10px auto 0; max-width: 320px; font-size: 11.5px; line-height: 1.45; color: rgba(255,255,255,.42); font-weight: 700; }
 

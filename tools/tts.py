@@ -7,7 +7,8 @@
     # нужен ffmpeg
 
 Запуск:
-    python tools/tts.py --speaker xenia            # озвучить все реплики
+    python tools/tts.py --speaker xenia            # озвучить все реплики голосом xenia (в папку voice/xenia/)
+    python tools/tts.py --all                      # озвучить всеми пятью голосами
     python tools/tts.py --speaker xenia b1 b2      # только выбранные
     python tools/tts.py --speaker xenia --missing  # только те, у которых ещё нет файла
 
@@ -28,6 +29,7 @@ VOICE = ROOT / "voice"
 MODEL_URL = "https://models.silero.ai/models/tts/ru/v5_6_ru.pt"
 MODEL = ROOT / "tools" / ".cache" / "v5_6_ru.pt"
 RATE = 48000
+SPEAKERS = ["aidar", "eugene", "baya", "kseniya", "xenia"]
 
 # Ударения ("+" перед ударной гласной) и произношение арабских слов
 STRESS = {
@@ -69,13 +71,12 @@ def chunks(text, limit=700):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--speaker", default="xenia", choices=["aidar", "baya", "kseniya", "eugene", "xenia"])
+    ap.add_argument("--speaker", default="xenia", choices=SPEAKERS)
+    ap.add_argument("--all", action="store_true", help="озвучить всеми голосами")
     ap.add_argument("--missing", action="store_true", help="озвучить только реплики без файла")
     ap.add_argument("ids", nargs="*")
     args = ap.parse_args()
 
-    import numpy as np
-    import soundfile as sf
     import torch
 
     if not MODEL.exists():
@@ -89,24 +90,33 @@ def main():
     unknown = [i for i in ids if i not in lines]
     if unknown:
         sys.exit("Нет таких реплик: " + ", ".join(unknown))
-    VOICE.mkdir(exist_ok=True)
+    for speaker in (SPEAKERS if args.all else [args.speaker]):
+        render(model, lines, ids, speaker, args.missing)
+
+
+def render(model, lines, ids, speaker, missing):
+    import numpy as np
+    import soundfile as sf
+
+    out_dir = VOICE / speaker
+    out_dir.mkdir(parents=True, exist_ok=True)
     pause = np.zeros(int(RATE * 0.25), dtype=np.float32)
     for n, key in enumerate(ids, 1):
-        out = VOICE / f"{key}.mp3"
-        if args.missing and out.exists():
+        out = out_dir / f"{key}.mp3"
+        if missing and out.exists():
             continue
         audio = []
         for part in chunks(prepare(lines[key])):
-            audio += [model.apply_tts(text=part, speaker=args.speaker, sample_rate=RATE).numpy(), pause]
+            audio += [model.apply_tts(text=part, speaker=speaker, sample_rate=RATE).numpy(), pause]
         with tempfile.NamedTemporaryFile(suffix=".wav") as tmp:
             sf.write(tmp.name, np.concatenate([pause] + audio), RATE)
             subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", tmp.name, "-af", "loudnorm=I=-16:TP=-1.5:LRA=11",
-                            "-ar", "44100", "-ac", "1", "-b:a", "80k", str(out)], check=True)
-        print(f"[{n}/{len(ids)}] {key}")
+                            "-ar", "44100", "-ac", "1", "-b:a", "64k", str(out)], check=True)
+        print(f"[{speaker} {n}/{len(ids)}] {key}", flush=True)
 
-    have = sorted(p.stem for p in VOICE.glob("*.mp3") if p.stem in lines)
-    (VOICE / "manifest.json").write_text(json.dumps(have, ensure_ascii=False, indent=0) + "\n", encoding="utf-8")
-    print(f"Готово. Файлов озвучки: {len(have)} из {len(lines)}")
+    have = sorted(p.stem for p in out_dir.glob("*.mp3") if p.stem in lines)
+    (out_dir / "manifest.json").write_text(json.dumps(have, ensure_ascii=False, indent=0) + "\n", encoding="utf-8")
+    print(f"Готово: {speaker}, файлов {len(have)} из {len(lines)}")
 
 
 if __name__ == "__main__":
