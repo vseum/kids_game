@@ -80,7 +80,7 @@ const ICON = {
 
 /* Сокровища за главы */
 const ITEMS = [
-  { id: "cloud", name: "Облачко", svg: '<path d="M22 76 Q4 76 6 60 Q8 46 24 48 Q26 28 48 26 Q66 18 76 34 Q94 32 96 52 Q98 76 78 76Z" fill="#fff" stroke="#9FC3D4" stroke-width="3"/><circle cx="40" cy="58" r="3" fill="#7FA9BC"/><circle cx="62" cy="58" r="3" fill="#7FA9BC"/>' },
+  { id: "cloud", name: "Облачко", svg: '<path d="M22 76 Q4 76 6 60 Q8 46 24 48 Q26 28 48 26 Q66 18 76 34 Q94 32 96 52 Q98 76 78 76Z" fill="#fff" stroke="#9FC3D4" stroke-width="3"/><path d="M24 66 Q50 72 80 64" stroke="#DCEAF2" stroke-width="4" fill="none" stroke-linecap="round"/>' },
   { id: "date", name: "Финик", svg: '<path d="M50 12 Q50 6 56 4" stroke="#6A3E1C" stroke-width="4" fill="none" stroke-linecap="round"/><ellipse cx="50" cy="54" rx="22" ry="38" fill="#8A4B1F"/><ellipse cx="42" cy="40" rx="6" ry="14" fill="#C27A45" opacity=".6"/><path d="M38 22 Q50 14 62 22" stroke="#5E3112" stroke-width="3" fill="none"/>' },
   { id: "anchor", name: "Якорь", svg: '<circle cx="50" cy="18" r="9" fill="none" stroke="#4F6F7C" stroke-width="6"/><path d="M50 27 V86" stroke="#4F6F7C" stroke-width="8" stroke-linecap="round"/><path d="M34 42 H66" stroke="#4F6F7C" stroke-width="7" stroke-linecap="round"/><path d="M16 60 Q20 88 50 88 Q80 88 84 60" stroke="#4F6F7C" stroke-width="8" fill="none" stroke-linecap="round"/><path d="M10 64 L16 54 L24 64Z M76 64 L84 54 L90 64Z" fill="#4F6F7C"/>' }
 ];
@@ -155,7 +155,7 @@ function swipeUp(e, timeout = 15000) {
 async function chIntro() {
   await toDark(); clearStage();
   sky("linear-gradient(180deg,#5FB4E6 0%,#A9DDF4 55%,#F6E7C4 100%)");
-  const { W, H } = size(); sunAt(W * 0.74, H * 0.36, 150); clouds(3); hills(0.32); vignette();
+  const { W, H } = size(); sunAt(W * 0.74, H * 0.42, 150); clouds(3, 0.28, 0.46); hills(0.32); vignette();
   Snd.amb("wind", 0.7); fromDark(); await sleep(500);
   await say("intro1");
   await say("intro2");
@@ -166,7 +166,7 @@ async function chIntro() {
 async function chSky() {
   await toDark(); clearStage();
   sky("linear-gradient(180deg,#4FA8E0 0%,#9AD5F2 55%,#E6F6FC 100%)");
-  const { W, H } = size(); sunAt(W * 0.8, H * 0.3, 140); clouds(3, 0.2, 0.4); hills(0.27); vignette();
+  const { W, H } = size(); sunAt(W * 0.8, H * 0.38, 140); clouds(3, 0.26, 0.44); hills(0.27); vignette();
   const groundY = H * 0.86;
   Snd.amb("wind"); fromDark(); await sleep(300);
   await chapterTitle(1, "Небо без опор", "k0");
@@ -247,7 +247,7 @@ async function chSky() {
 async function chFruit() {
   await toDark(); clearStage();
   sky("linear-gradient(180deg,#6CC0EA 0%,#B7E3F6 55%,#F4F0D8 100%)");
-  const { W, H } = size(); const sun = sunAt(W * 0.16, H * 0.3, 130); clouds(2, 0.22, 0.36); hills(0.34, ["#B5DE98", "#8CCB72", "#69B65E"]); vignette();
+  const { W, H } = size(); const sun = sunAt(W * 0.8, H * 0.4, 130); clouds(2, 0.3, 0.42); hills(0.34, ["#B5DE98", "#8CCB72", "#69B65E"]); vignette();
   const groundY = H * 0.8;
   Snd.amb("wind", 0.8); fromDark(); await sleep(300);
   await chapterTitle(2, "Разные плоды", "f0");
@@ -273,7 +273,7 @@ async function chFruit() {
   await say("f4");
 
   /* стакан воды: из воды яблоко не сделать */
-  const gl = obj("glass", ART.glass, W * 0.5, H * 0.66, 92, 126); gl.style.zIndex = 8; fadeIn(gl);
+  const gl = obj("glass", ART.glass, W * 0.5, H * 0.87, 84, 115); gl.style.zIndex = 8; fadeIn(gl);
   const spoon = gl.querySelector(".spoon"); spoon.style.transformBox = "fill-box"; spoon.style.transformOrigin = "50% 0%";
   cue("f5");
   await taps(gl, 4, () => { Snd.splash(); spoon.animate([{ transform: "rotate(0deg)" }, { transform: "rotate(-16deg)" }, { transform: "rotate(12deg)" }, { transform: "rotate(0deg)" }], { duration: 450 }); });
@@ -311,7 +311,7 @@ function windLines(n, top, bottom) {
 async function chShip() {
   await toDark(); clearStage();
   sky("linear-gradient(180deg,#5AB2E4 0%,#A9DCF3 60%,#E9F6FB 100%)");
-  const { W, H } = size(); sunAt(W * 0.8, H * 0.27, 140); clouds(3, 0.18, 0.36);
+  const { W, H } = size(); sunAt(W * 0.8, H * 0.36, 140); clouds(3, 0.26, 0.42);
   const seaTop = H * 0.58;
   const isl = obj("island", ART.island, W * 0.2, seaTop - 18, 180, 72); isl.style.opacity = .85;
   const wave = (cls, top, fill, flip) => `<svg class="wave ${cls}" viewBox="0 0 800 44" preserveAspectRatio="none" style="top:${top}"><path d="M0 22 ${Array.from({ length: 16 }, (_, i) => `Q${i * 50 + 25} ${(i % 2) ^ flip ? 38 : 6} ${i * 50 + 50} 22`).join(" ")} V44 H0Z" fill="${fill}"/></svg>`;

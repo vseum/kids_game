@@ -45,34 +45,37 @@
   </section>
 
   <section id="start">
-    <svg class="hero" viewBox="0 0 400 860" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-      <defs>
-        <linearGradient id="hSky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stop-color="#0B2236"/><stop offset=".45" stop-color="#1D4A66"/><stop offset=".72" stop-color="#C98A6B"/><stop offset=".86" stop-color="#F2C98A"/>
-        </linearGradient>
-        <radialGradient id="hGlow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#FFE7A8" stop-opacity=".55"/><stop offset="1" stop-color="#FFE7A8" stop-opacity="0"/></radialGradient>
-        <linearGradient id="hD1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2C5368"/><stop offset="1" stop-color="#1A3A4C"/></linearGradient>
-        <linearGradient id="hD2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#173444"/><stop offset="1" stop-color="#0E2533"/></linearGradient>
-      </defs>
-      <rect width="400" height="860" fill="url(#hSky)"/>
-      <g class="twinkle" fill="#FFF6DD">
-        <circle cx="40" cy="70" r="1.6"/><circle cx="96" cy="140" r="1.1"/><circle cx="150" cy="52" r="1.4"/><circle cx="210" cy="118" r="1"/><circle cx="262" cy="40" r="1.7"/>
-        <circle cx="352" cy="96" r="1.2"/><circle cx="380" cy="180" r="1"/><circle cx="20" cy="210" r="1.1"/><circle cx="120" cy="250" r="1"/><circle cx="330" cy="260" r="1.3"/>
-        <circle cx="70" cy="330" r=".9"/><circle cx="240" cy="300" r="1"/><circle cx="186" cy="200" r="1.2"/><circle cx="300" cy="170" r=".9"/>
-      </g>
-      <circle cx="300" cy="150" r="90" fill="url(#hGlow)"/>
-      <path d="M312 104a46 46 0 1 0 26 84A40 40 0 1 1 312 104z" fill="#FFE29A"/>
-      <path d="M352 120l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" fill="#FFE29A"/>
-      <path d="M0 660 Q90 600 190 640 T400 610 V860 H0Z" fill="url(#hD1)"/>
-      <g fill="#1A3A4C">
-        <rect x="248" y="560" width="70" height="60" rx="3"/>
-        <path d="M252 562 Q283 512 314 562Z"/>
-        <rect x="280" y="520" width="6" height="14" rx="2"/>
-        <rect x="232" y="520" width="10" height="100" rx="3"/><path d="M230 522 L237 498 L244 522Z"/>
-        <rect x="324" y="520" width="10" height="100" rx="3"/><path d="M322 522 L329 498 L336 522Z"/>
-      </g>
-      <path d="M0 720 Q120 670 230 705 T400 690 V860 H0Z" fill="url(#hD2)"/>
-    </svg>
+    <div class="hero">
+      <svg viewBox="0 0 400 420" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+        <defs>
+          <linearGradient id="hSky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#0B2236"/><stop offset=".5" stop-color="#1D4A66"/><stop offset=".8" stop-color="#C98A6B"/><stop offset="1" stop-color="#F6D08C"/>
+          </linearGradient>
+          <radialGradient id="hGlow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#FFE7A8" stop-opacity=".5"/><stop offset="1" stop-color="#FFE7A8" stop-opacity="0"/></radialGradient>
+          <radialGradient id="hSunset" cx=".5" cy="1" r=".6"><stop offset="0" stop-color="#FFE3A3" stop-opacity=".9"/><stop offset="1" stop-color="#FFE3A3" stop-opacity="0"/></radialGradient>
+        </defs>
+        <rect width="400" height="420" fill="url(#hSky)"/>
+        <ellipse cx="200" cy="400" rx="260" ry="120" fill="url(#hSunset)"/>
+        <g class="twinkle" fill="#FFF6DD">
+          <circle cx="40" cy="60" r="1.6"/><circle cx="96" cy="120" r="1.1"/><circle cx="150" cy="40" r="1.4"/><circle cx="214" cy="96" r="1"/><circle cx="250" cy="30" r="1.7"/>
+          <circle cx="372" cy="60" r="1.2"/><circle cx="386" cy="190" r="1"/><circle cx="20" cy="180" r="1.1"/><circle cx="120" cy="200" r="1"/><circle cx="180" cy="160" r="1.2"/>
+          <circle cx="66" cy="250" r=".9"/><circle cx="340" cy="230" r="1"/>
+        </g>
+        <circle cx="322" cy="232" r="64" fill="url(#hGlow)"/>
+        <path d="M330 202a30 30 0 1 0 17 55A26 26 0 1 1 330 202z" fill="#FFE29A"/>
+        <path d="M356 212l2 4.1 4.5.7-3.3 3.2.8 4.5-4-2.1-4 2.1.8-4.5-3.3-3.2 4.5-.7z" fill="#FFE29A"/>
+        <g fill="#163444">
+          <rect x="166" y="330" width="68" height="60" rx="3"/>
+          <path d="M170 332 Q200 280 230 332Z"/>
+          <rect x="197" y="286" width="6" height="14" rx="2"/>
+          <rect x="146" y="290" width="10" height="100" rx="3"/><path d="M144 292 L151 266 L158 292Z"/>
+          <rect x="244" y="290" width="10" height="100" rx="3"/><path d="M242 292 L249 266 L256 292Z"/>
+        </g>
+        <g fill="#FFD98A"><rect x="186" y="350" width="8" height="13" rx="4"/><rect x="206" y="350" width="8" height="13" rx="4"/></g>
+        <path d="M0 392 Q100 368 200 386 T400 378 V420 H0Z" fill="#1E4255"/>
+        <path d="M0 404 Q130 388 250 400 T400 398 V420 H0Z" fill="#163444"/>
+      </svg>
+    </div>
     <div class="sbox">
       <p class="bism" lang="ar" dir="rtl">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
       <h1>Аяты<br>вокруг нас</h1>
