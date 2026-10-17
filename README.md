@@ -37,14 +37,14 @@ python3 -m http.server 8000
 и открыть http://localhost:8000
 
 ## Озвучка
-Голос делается бесплатной нейросетью **Silero TTS**. После того как модель скачана, она работает без интернета, без ключей и без оплаты.
+Голос делается бесплатными нейросетями **Silero TTS** и **Piper**. После того как модель скачана, она работает без интернета, без ключей и без оплаты.
 ```
 pip install torch --index-url https://download.pytorch.org/whl/cpu
-pip install numpy scipy soundfile omegaconf
+pip install numpy scipy soundfile omegaconf piper-tts
 python3 tools/tts.py --all                 # все пять голосов
 python3 tools/tts.py --speaker xenia b1    # одна реплика одним голосом
 ```
-- **Голоса:** `xenia`, `baya`, `kseniya` (женские), `aidar`, `eugene` (мужские). Файлы каждого голоса лежат в `voice/<голос>/`.
+- **Голоса:** `xenia`, `baya`, `kseniya` (женские), `aidar`, `eugene`, `alexandr`, `roman` (мужские, Silero), `denis`, `ruslan` (мужские, Piper). Файлы каждого голоса лежат в `voice/<голос>/`, таблица голосов — `VOICES` в `tools/tts.py`.
 - **Выбор в игре:** на стартовом экране кнопка «Голос». Там каждый голос можно послушать и выбрать. Голос по умолчанию — `xenia`. Можно открыть игру сразу с нужным голосом: `?golos=aidar`.
 - **Неправильное ударение:** добавьте слово в словарь `STRESS` в `tools/tts.py`, знак `+` ставится перед ударной гласной.
 
@@ -81,4 +81,4 @@ cd ../jarvis-azata && git add web/igra && git commit -m "Обновление и
 - Текст аятов: [alquran.cloud](https://alquran.cloud) (quran-simple).
 - Перевод смыслов Корана: Эльмир Кулиев.
 - Чтение Корана: Мишари Рашид аль-Афаси (cdn.islamic.network).
-- Голос: [Silero TTS](https://github.com/snakers4/silero-models), лицензия CC BY-NC 4.0 (только некоммерческое использование).
+- Голоса: [Silero TTS](https://github.com/snakers4/silero-models) (v5_6_ru — CC BY-NC 4.0, v5_cis_base — MIT) и [Piper](https://github.com/rhasspy/piper) (denis — датасет CC0, ruslan — CC BY-NC-SA 4.0). Игра бесплатная, некоммерческая.
