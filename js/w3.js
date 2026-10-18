@@ -21,12 +21,11 @@ Object.assign(window.AYAT, {
       { n: 5841, ar: "يَعْلَمُونَ مَا تَفْعَلُونَ" }
     ]
   },
-  "3:3-4": {
-    ref: "Сура Аль Имран, 3:3-4",
+  "3:3": {
+    ref: "Сура Аль Имран, 3:3",
     tr: "tr_3_3",
     parts: [
-      { n: 296, ar: "نَزَّلَ عَلَيْكَ الْكِتَابَ بِالْحَقِّ مُصَدِّقًا لِمَا بَيْنَ يَدَيْهِ وَأَنْزَلَ التَّوْرَاةَ وَالْإِنْجِيلَ" },
-      { n: 297, ar: "مِنْ قَبْلُ هُدًى لِلنَّاسِ وَأَنْزَلَ الْفُرْقَانَ ۗ إِنَّ الَّذِينَ كَفَرُوا بِآيَاتِ اللَّهِ لَهُمْ عَذَابٌ شَدِيدٌ ۗ وَاللَّهُ عَزِيزٌ ذُو انْتِقَامٍ" }
+      { n: 296, ar: "نَزَّلَ عَلَيْكَ الْكِتَابَ بِالْحَقِّ مُصَدِّقًا لِمَا بَيْنَ يَدَيْهِ وَأَنْزَلَ التَّوْرَاةَ وَالْإِنْجِيلَ" }
     ]
   },
   "33:40": {
@@ -653,7 +652,7 @@ async function chBooks() {
   await sleep(1800);
   const misses = await choice("books_q", [{ id: "books_qa", icon: ICON.w3_taurat }, { id: "books_qb", icon: ICON.w3_injil }, { id: "books_qc", icon: ICON.w3_quran, ok: true }], "books_q_ok");
   await say("books_quran");
-  await ayahCard("3:3-4");
+  await ayahCard("3:3");
   await say("books_end", { btn: "Ин ша Аллах" });
   hideCap(); await award("w3_bookmark");
   return misses;

@@ -392,9 +392,15 @@ button { font: inherit; cursor: pointer; border: 0; color: inherit; background: 
 #cap.hidden #capBtns { pointer-events: none; }
 /* полоска ритма не глотает касания */
 .tbar { pointer-events: none; }
-/* длинная карточка аята прокручивается целиком, заголовок не уезжает вверх */
-.ayah { align-items: flex-start; }
-.acard { margin: auto 0; }
+/* карточка аята всегда влезает в экран: прокручивается только текст, кнопки на месте */
+.ayah { overflow: hidden; }
+.acard { display: flex; flex-direction: column; max-height: 100%; }
+.acard .abody { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; margin: 0 -6px; padding: 0 6px; }
+.acard .abody.more { -webkit-mask-image: linear-gradient(#000 calc(100% - 46px), transparent); mask-image: linear-gradient(#000 calc(100% - 46px), transparent); }
+.acard .abtns { flex: none; padding-top: 4px; }
+.ayah.long .acard .ar { font-size: clamp(22px, 5.6vw, 27px); line-height: 1.85; }
+.ayah.xlong .acard .ar { font-size: clamp(20px, 5vw, 25px); line-height: 1.8; }
+.ayah.xlong .acard .tr { font-size: 15.5px; }
 
 /* мир 2 */
 .swave { position: absolute; border-radius: 50%; border: 4px solid transparent; border-right-color: rgba(255,255,255,.9); pointer-events: none; }
@@ -427,3 +433,14 @@ button { font: inherit; cursor: pointer; border: 0; color: inherit; background: 
 /* финал: когда сокровищ много, они мельче */
 .items-row.many { gap: 8px 10px; bottom: 8%; }
 .items-row.many svg { width: 42px; height: 42px; animation-duration: 4s; }
+/* узкий экран: «Чтец» и «Перевод» в одну строку, «Дальше» под ними */
+@media (max-width: 380px) {
+  .abtns { gap: 8px; }
+  .abtns .btn.teal { min-height: 44px; font-size: 15px; padding: 0 14px; }
+  .acard { padding: 24px 16px 16px; }
+  .acard .star8 { width: 26px; height: 26px; }
+}
+@media (max-height: 600px) {
+  .acard .ref { margin-bottom: 8px; }
+  .abtns .btn { min-height: 44px; }
+}

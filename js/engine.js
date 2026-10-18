@@ -316,10 +316,16 @@ function ayahCard(key) {
     const firstNum = +key.split(":")[1].split("-")[0];
     const ar = a.parts.map((p, i) => `${p.ar} <span class="num">﴿${AR_DIGITS(firstNum + i)}﴾</span>`).join(" ");
     const ov = el("div", "ayah", app,
-      `<div class="acard">${["tl", "tr", "bl", "br"].map(c => `<svg class="star8 ${c}" viewBox="0 0 40 40" aria-hidden="true">${STAR8}</svg>`).join("")}<p class="lbl">Аят из Корана</p><p class="ref">${a.ref}</p><p class="ar" dir="rtl" lang="ar">${ar}</p>` +
-      `<p class="tr"></p><p class="src">Перевод смыслов: Эльмир Кулиев</p>` +
+      `<div class="acard">${["tl", "tr", "bl", "br"].map(c => `<svg class="star8 ${c}" viewBox="0 0 40 40" aria-hidden="true">${STAR8}</svg>`).join("")}<p class="lbl">Аят из Корана</p><p class="ref">${a.ref}</p><div class="abody"><p class="ar" dir="rtl" lang="ar">${ar}</p>` +
+      `<p class="tr"></p><p class="src">Перевод смыслов: Эльмир Кулиев</p></div>` +
       `<div class="abtns"><button class="btn teal" data-a="qari">▶ Чтец</button><button class="btn teal" data-a="tr">▶ Перевод</button><button class="btn" data-a="next">Дальше</button></div></div>`);
     ov.querySelector("p.tr").textContent = L(a.tr);
+    /* длинный аят: арабский мельче, текст прокручивается внутри карточки, кнопки всегда на экране */
+    const arLen = a.parts.reduce((n, p) => n + p.ar.length, 0);
+    if (arLen > 260) ov.classList.add(arLen > 520 ? "xlong" : "long");
+    const body = ov.querySelector(".abody");
+    const fade = () => body.classList.toggle("more", body.scrollTop + body.clientHeight < body.scrollHeight - 4);
+    body.addEventListener("scroll", fade, { passive: true }); requestAnimationFrame(fade);
     requestAnimationFrame(() => requestAnimationFrame(() => ov.classList.add("on")));
     Snd.sparkle();
     let closed = false;
