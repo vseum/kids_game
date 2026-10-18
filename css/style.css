@@ -465,8 +465,7 @@ button { font: inherit; cursor: pointer; border: 0; color: inherit; background: 
 .nmsug { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; min-height: 40px; margin-bottom: 6px; }
 .nmchip { padding: 8px 14px; border-radius: 14px; background: #fff; color: var(--night-2); font-weight: 800; font-size: 16px; box-shadow: 0 2px 0 #E6D7B5; }
 .nmchip.on { background: linear-gradient(160deg, #FFE7A0, #F5C451); }
-.shake { animation: shake .4s; }
-@keyframes shake { 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+.nmin.shake { animation: shake .42s; }
 .hello { margin: 10px 0 0; color: rgba(255,255,255,.85); font-weight: 800; font-size: 16px; }
 .hello b { color: var(--gold); }
 .hello button { margin-left: 6px; padding: 2px 6px; color: rgba(255,255,255,.55); font-weight: 700; font-size: 13.5px; text-decoration: underline; text-underline-offset: 3px; }
@@ -478,7 +477,9 @@ button { font: inherit; cursor: pointer; border: 0; color: inherit; background: 
 .cert.on img { transform: none; }
 .cert p { margin: 10px 0 8px; color: rgba(255,255,255,.7); font-weight: 700; font-size: 13.5px; text-align: center; }
 .cert .row { display: flex; gap: 10px; justify-content: center; }
+.chtitle.lvl { place-items: end center; padding-bottom: 20vh; }
 .chtitle.lvl small { letter-spacing: 2px; }
+.chtitle.lvl b { font-size: clamp(30px, 8.5vw, 40px); }
 /* карточка аята: текст подсвечивается, пока звучит; кнопки-значки в цветах текста */
 .acard .ref { margin: 2px 0 10px; font-size: 15px; color: var(--gold-3); }
 .acard .ar .ap { border-radius: 12px; padding: 0 3px; transition: background-color .35s, box-shadow .35s; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
@@ -502,3 +503,26 @@ button { font: inherit; cursor: pointer; border: 0; color: inherit; background: 
   .ibtn { width: 54px; } .ibtn svg { width: 50px; height: 50px; padding: 11px; }
   .abtns .btn.next { min-height: 50px; padding: 0 16px; font-size: 16px; }
 }
+/* ---------- меню: пауза, повтор реплики, главная кнопка ---------- */
+#capRe { position: absolute; right: 8px; top: 8px; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; color: rgba(255,255,255,.75); background: rgba(255,255,255,.1); pointer-events: auto; transition: opacity .25s, transform .15s; }
+#capRe svg { width: 22px; height: 22px; }
+#capRe:active { transform: scale(.9); }
+#cap.talk #capRe { opacity: 0; pointer-events: none; }
+#cap.hidden #capRe { pointer-events: none; }
+#capText { padding-right: 26px; padding-left: 26px; }
+#go { display: inline-flex; flex-direction: column; align-items: center; justify-content: center; line-height: 1.1; }
+#go small { margin-top: 3px; max-width: 260px; font-size: 13px; font-weight: 800; opacity: .75; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.psheet .sheet-in { max-width: 380px; margin-top: 8vh; }
+.psheet h2 { margin-bottom: 2px; }
+.psub { margin: 0 0 14px !important; }
+.pmenu { display: flex; flex-direction: column; gap: 10px; }
+.pbtn { display: flex; align-items: center; gap: 14px; min-height: 60px; padding: 8px 12px; border-radius: 18px; background: #fff; color: var(--night-2); font-weight: 900; font-size: 18px; text-align: left; box-shadow: 0 3px 0 #E6D7B5; transition: transform .12s; }
+.pbtn:active { transform: translateY(2px); box-shadow: 0 1px 0 #E6D7B5; }
+.pbtn .pi { flex: none; width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center; background: linear-gradient(160deg, #E7F3F8, #CFE5EE); color: #1F5B74; }
+.pbtn .pi svg { width: 24px; height: 24px; }
+/* главное действие слегка выделено: тёплый фон и золотая иконка */
+.pbtn.main { background: linear-gradient(180deg, #FFF6DA, #FFE9AE); box-shadow: 0 3px 0 #E2C77E, 0 0 0 2px rgba(230,169,58,.55); }
+.pbtn.main .pi { background: linear-gradient(180deg, #FFD978, var(--gold-2)); color: #3B2A0C; }
+/* следующая глава в списке — слегка подсвечена */
+.ch.next { box-shadow: 0 3px 0 #E2C77E, 0 0 0 2.5px rgba(230,169,58,.75), 0 8px 14px -10px rgba(0,0,0,.35); background: #FFFBEF; }
+.ch.next .stars { color: var(--gold-3); }

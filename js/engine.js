@@ -275,7 +275,11 @@ const Me = {
 const callName = named => named && Me.name ? Me.name + "! " : "";
 
 /* ============ ПОДПИСИ И КНОПКИ ============ */
+/* Реплика в подписи: её можно переслушать кнопкой — для детей, которые ещё не читают */
+let capLine = null;
+function replayCap() { if (capLine && !cap.classList.contains("hidden")) { unlockAudio(); Voice.speak(capLine.id, capLine.named); } }
 function showCap(id, note, named) {
+  capLine = { id, named };
   cap.classList.remove("hidden");
   capText.textContent = callName(named) + L(id); capText.classList.remove("pop"); void capText.offsetWidth; capText.classList.add("pop");
   capNote.textContent = note || ""; capBtns.innerHTML = "";
@@ -312,14 +316,14 @@ function choice(qid, opts, okId) {
           picked = true;
           Snd.tap(); celebrate(); b.classList.add("yes"); b.disabled = true;
           btns.forEach(x => { x.onclick = null; if (x !== b) x.remove(); });
-          capNote.textContent = callName(true) + L(okId);
+          capNote.textContent = callName(true) + L(okId); capLine = { id: okId, named: true };
           const p = Voice.speak(okId, true); await sleep(500);
           const nb = button("Дальше"); p.then(() => nb.classList.add("glow")); await clicked(nb);
           Voice.stop(); capBtns.innerHTML = ""; capNote.textContent = ""; res(misses);
         } else {
           misses++; Snd.thud(0.3); b.classList.add("no"); b.disabled = true;
           const nid = window.LINES[o.id + "_no"] ? o.id + "_no" : "wrong";
-          capNote.textContent = L(nid); pending = Voice.speak(nid);
+          capNote.textContent = L(nid); capLine = { id: nid }; pending = Voice.speak(nid);
         }
       };
       return b;
@@ -407,9 +411,9 @@ function ayahCard(key) {
 /* ============ ЗАСТАВКА ГЛАВЫ ============ */
 /* Текущая глава (id): по ней заставка сама считает «Уровень N · Глава M» */
 let CUR = null;
-function chapterPlace() {
-  const wi = WORLDS.findIndex(w => w.ch.includes(CUR));
-  return wi < 0 ? "" : `Уровень ${wi + 1} · Глава ${WORLDS[wi].ch.indexOf(CUR) + 1}`;
+function chapterPlace(id = CUR) {
+  const wi = WORLDS.findIndex(w => w.ch.includes(id));
+  return wi < 0 ? "" : `Уровень ${wi + 1} · Глава ${WORLDS[wi].ch.indexOf(id) + 1}`;
 }
 /* Заставка главы. Первый параметр оставлен для совместимости и не используется */
 async function chapterTitle(_, name, lineId) {
@@ -484,6 +488,7 @@ function sheet(html) {
 }
 function chaptersSheet() {
   return new Promise(res => {
+    const next = CHAPTERS.find(c => !Save.d.done[c.id]);   // следующая непройденная — подсвечена
     const html = WORLDS.map((w, wi) => {
       const ready = w.ch.filter(c => CHAPTERS.some(x => x.id === c)), done = ready.filter(c => Save.d.done[c]).length;
       return `<div class="world"><div class="whead"><span class="wnum">${wi + 1}</span><div><b>${w.t}</b><small>${w.s}</small>` +
@@ -491,16 +496,34 @@ function chaptersSheet() {
         w.ch.map(c => {
           const ch = CHAPTERS.find(x => x.id === c);
           if (!ch) return `<div class="ch soon"><span class="ci">${LOCK}</span><span>${c}<span class="stars">скоро</span></span></div>`;
-          const st = Save.d.done[c] || 0;
-          return `<button class="ch" data-id="${c}"><span class="ci"><svg viewBox="0 0 48 48" aria-hidden="true">${ch.icon}</svg></span><span>${ch.name.replace(/^(Аль|Ан|Ас|Ад)-(\S+)/, '<span class="nw">$1-$2</span>')}<span class="stars">${st ? "★".repeat(st) + "☆".repeat(3 - st) : "играть"}</span></span></button>`;
+          const st = Save.d.done[c] || 0, nx = next && next.id === c;
+          return `<button class="ch${nx ? " next" : ""}" data-id="${c}"><span class="ci"><svg viewBox="0 0 48 48" aria-hidden="true">${ch.icon}</svg></span><span>${ch.name.replace(/^(Аль|Ан|Ас|Ад)-(\S+)/, '<span class="nw">$1-$2</span>')}<span class="stars">${st ? "★".repeat(st) + "☆".repeat(3 - st) : nx ? "дальше ▶" : "играть"}</span></span></button>`;
         }).join("") + `</div></div>`;
     }).join("");
     const ov = sheet(`<h2>Главы</h2>${html}<div class="row"><button class="btn line" id="shClose">Закрыть</button></div>`);
+    const nb = ov.querySelector(".ch.next"); if (nb) setTimeout(() => nb.scrollIntoView({ block: "center", behavior: "smooth" }), 350);
     ov.querySelectorAll("button.ch").forEach(b => b.onclick = () => { Snd.tap(); ov.close(); res(CHAPTERS.findIndex(c => c.id === b.dataset.id)); });
     ov.querySelector("#shClose").onclick = () => { Snd.tap(); ov.close(); res(null); };
   });
 }
 const LOCK = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2.5" fill="#B7C6CC"/><path d="M8 11V8a4 4 0 0 1 8 0v3" fill="none" stroke="#B7C6CC" stroke-width="2.2"/></svg>';
+/* Пауза во время главы: главное действие — «Играть дальше» (выделено), остальное спокойнее */
+const PICO = {
+  go: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>',
+  again: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12a7 7 0 1 0 2.1-5" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round"/><path d="M6.5 3.5V7.4h3.9" stroke="currentColor" stroke-width="2.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  list: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4" width="7" height="7" rx="2" fill="currentColor"/><rect x="13.5" y="4" width="7" height="7" rx="2" fill="currentColor"/><rect x="3.5" y="13" width="7" height="7" rx="2" fill="currentColor"/><rect x="13.5" y="13" width="7" height="7" rx="2" fill="currentColor"/></svg>',
+  home: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 11.2L12 4l8.5 7.2" stroke="currentColor" stroke-width="2.3" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M6 10v9.2h4.2v-5.4h3.6v5.4H18V10" fill="currentColor"/></svg>'
+};
+function pauseSheet() {
+  return new Promise(res => {
+    Voice.stop();
+    const row = (a, t, cls = "") => `<button class="pbtn ${cls}" data-a="${a}"><span class="pi">${PICO[a]}</span><span>${t}</span></button>`;
+    const ov = sheet(`<h2>Пауза</h2><p class="small psub">${chapterPlace()}</p><div class="pmenu">${row("go", "Играть дальше", "main")}${row("again", "Начать главу заново")}${row("list", "Все главы")}${row("home", "На главную")}</div>`);
+    ov.classList.add("psheet");
+    ov.querySelectorAll(".pbtn").forEach(b => b.onclick = () => { Snd.tap(); ov.close(); res(b.dataset.a); });
+    ov.onclick = e => { if (e.target === ov) { ov.close(); res("go"); } };   // нажали мимо — играем дальше
+  });
+}
 /* Выбор голоса: каждый можно послушать */
 function voiceSheet() {
   return new Promise(res => {
@@ -539,6 +562,7 @@ function nameSheet() {
       sug.querySelectorAll(".nmchip").forEach(b => b.onclick = () => { Snd.tap(); unlockAudio(); inp.value = b.textContent; Me.hello(b.textContent); update(); });
     };
     inp.value = Me.name; inp.oninput = update; update();
+    inp.onblur = () => { const t = tidy(inp.value); if (t !== inp.value) { inp.value = t; update(); } };
     const done = async name => { inp.blur(); ov.close(); await Me.set(name); res(name); };
     ov.querySelector("#nmOk").onclick = () => {
       const n = tidy(inp.value);

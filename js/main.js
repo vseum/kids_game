@@ -23,18 +23,25 @@ async function play(from, withIntro) {
   await chFinal();
   showStart();
 }
+/* Стартовый экран: одна главная кнопка (что делать дальше) и «Все главы» */
+let jump = null;   // глава, выбранная во время игры (страница перезагружалась)
+function startAction() {
+  if (jump != null) return { t: "Играть", sub: chapterPlace(CHAPTERS[jump].id) + ": " + CHAPTERS[jump].name, k: jump, intro: false };
+  const next = nextUndone(), any = Object.keys(Save.d.done).length > 0;
+  if (!any) return { t: "Играть", sub: "", k: 0, intro: true };
+  if (next == null) return { t: "Играть снова", sub: "Все главы пройдены", k: 0, intro: false };
+  return { t: "Продолжить", sub: chapterPlace(CHAPTERS[next].id) + ": " + CHAPTERS[next].name, k: next, intro: false };
+}
 function showStart() {
   running = false; hideCap(); clearStage(); fromDark();
-  const any = Object.keys(Save.d.done).length > 0, next = nextUndone();
-  $("#goCont").hidden = !any || next == null;
-  $("#go").textContent = any ? "Начать сначала" : "Начать";
-  $("#go").classList.toggle("glass", any && next != null);
+  const a = startAction();
+  $("#goT").textContent = a.t; $("#goSub").textContent = a.sub; $("#goSub").hidden = !a.sub;
   $("#start").classList.remove("off");
 }
 async function pickChapter() {
   const k = await chaptersSheet();
   if (k == null) return;
-  if (running) { try { sessionStorage.setItem("ayaty_jump", CHAPTERS[k].id); } catch (e) {} location.reload(); return; }
+  if (running) return restartAt(CHAPTERS[k].id);
   play(k, false);
 }
 
@@ -47,21 +54,29 @@ Save.load(); Save.d.items = Save.d.items.filter(i => ITEMS.some(x => x.id === i)
 $("#goVoice").hidden = VOICES.length < 2;
 Voice.load().then(() => { $("#goVoice b").textContent = voiceName(); Me.load(); });
 showHello(); showStart();
-$("#go").onclick = async () => { Snd.tap(); await askName(); play(0, true); };
-$("#goCont").onclick = async () => { Snd.tap(); await askName(); const k = nextUndone(); if (k != null) play(k, false); };
+$("#go").onclick = async () => { Snd.tap(); await askName(); const a = startAction(); jump = null; play(a.k, a.intro); };
 $("#goCh").onclick = async () => { Snd.tap(); await askName(); pickChapter(); };
 $("#goName").onclick = async () => { Snd.tap(); await nameSheet(); showHello(); };
 $("#goVoice").onclick = async () => { Snd.tap(); await voiceSheet(); $("#goVoice b").textContent = voiceName(); };
-$("#tHome").onclick = () => { Snd.tap(); pickChapter(); };
+/* Домик: на старте — список глав, в игре — пауза */
+$("#tMenu").onclick = async () => {
+  Snd.tap();
+  if (!running) return pickChapter();
+  const a = await pauseSheet();
+  if (a === "go") replayCap();
+  else if (a === "again") restartAt(CUR);
+  else if (a === "list") pickChapter();
+  else if (a === "home") location.reload();
+};
+/* Главу нельзя прервать посреди анимаций — перезапускаемся со страницей, а глава ждёт на стартовом экране */
+function restartAt(id) { try { sessionStorage.setItem("ayaty_jump", id); } catch (e) {} location.reload(); }
 $("#tBag").onclick = () => { Snd.tap(); bagSheet(); };
-$("#tVoice").onclick = e => { Voice.on = !Voice.on; e.currentTarget.setAttribute("aria-pressed", Voice.on); if (!Voice.on) Voice.stop(); };
-$("#tSfx").onclick = e => { Snd.setOn(!Snd.on); e.currentTarget.setAttribute("aria-pressed", Snd.on); };
-/* После выбора главы во время игры страница перезагружается: предлагаем сразу сыграть выбранную главу */
+/* Один звук на всё: и голос, и звуки */
+$("#tSfx").onclick = e => { const on = !Snd.on; Snd.setOn(on); Voice.on = on; if (!on) Voice.stop(); e.currentTarget.setAttribute("aria-pressed", on); };
+$("#capRe").onclick = () => { Snd.tap(); replayCap(); };
+/* После «Начать главу заново» или выбора главы во время игры страница перезагружается: эта глава — на главной кнопке */
 (() => {
   let j = null; try { j = sessionStorage.getItem("ayaty_jump"); sessionStorage.removeItem("ayaty_jump"); } catch (e) {}
   const k = CHAPTERS.findIndex(c => c.id === j);
-  if (k < 0) return;
-  const b = el("button", "btn big", null, "Играть: " + CHAPTERS[k].name);
-  $(".sbtns").prepend(b);
-  b.onclick = () => { Snd.tap(); play(k, false); };
+  if (k >= 0) { jump = k; showStart(); }
 })();
