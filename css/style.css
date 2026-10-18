@@ -19,7 +19,7 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body {
   margin: 0; height: 100%; overflow: hidden; background: var(--night);
-  font-family: "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif; color: var(--ink);
+  font-family: "Nunito", "Amiri", system-ui, -apple-system, "Segoe UI", sans-serif;   /* Amiri подхватывает ﷺ и арабские слова */ color: var(--ink);
   overscroll-behavior: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
   -webkit-font-smoothing: antialiased;
 }

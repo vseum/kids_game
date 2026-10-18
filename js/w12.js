@@ -72,7 +72,7 @@ Object.assign(ART, {
     <path d="M8 9 V82 A9 9 0 0 0 26 82 V9" fill="rgba(255,255,255,.6)" stroke="#8FAAB6" stroke-width="3"/>
     <path class="w12-pl" d="M9.5 52 H24.5 V82 A7.5 7.5 0 0 1 9.5 82Z" fill="#fff" opacity="0"/>
     <path d="M12 14 V78" stroke="#fff" stroke-width="3" opacity=".7" stroke-linecap="round"/></svg>`,
-  w12_moon: `<svg viewBox="0 0 80 80" aria-hidden="true"><circle cx="40" cy="40" r="38" fill="rgba(255,240,190,.22)"/>${w12cres(44, 40, 26, "#FFE7A0")}</svg>`,
+  w12_moon: `<svg viewBox="0 0 80 80" aria-hidden="true"><defs><radialGradient id="w12gMoonH"><stop offset=".3" stop-color="#FFF0BE" stop-opacity=".45"/><stop offset="1" stop-color="#FFF0BE" stop-opacity="0"/></radialGradient></defs><circle cx="40" cy="40" r="40" fill="url(#w12gMoonH)"/>${w12cres(44, 40, 26, "#FFE7A0")}</svg>`,
   w12_candle: `<svg viewBox="0 0 50 130" aria-hidden="true"><defs><linearGradient id="w12gWax" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#F3E3C4"/><stop offset=".5" stop-color="#FFF8EA"/><stop offset="1" stop-color="#E2CDA6"/></linearGradient></defs>
     <rect class="w12-wax" x="15" y="40" width="20" height="78" rx="3" fill="url(#w12gWax)"/>
     <path class="w12-wick" d="M25 40 V33" stroke="#4A3524" stroke-width="2.4" stroke-linecap="round"/>
@@ -148,9 +148,11 @@ addCSS(`
 .w12-flash { position: absolute; inset: 0; background: #E8F1FF; opacity: 0; pointer-events: none; }
 .w12-flash.on { animation: w12fl .7s ease-out; }
 @keyframes w12fl { 10% { opacity: .8; } 30% { opacity: .15; } 45% { opacity: .5; } 100% { opacity: 0; } }
-.obj.w12-dua { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border-radius: 22px; background: var(--parch); box-shadow: 0 0 0 3px var(--gold), 0 10px 26px rgba(0,0,0,.35); cursor: pointer; z-index: 12; }
-.obj.w12-dua b { font-family: "Amiri", serif; font-size: 30px; line-height: 1.3; color: var(--ink); }
+.obj.w12-dua { padding: 16px 12px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; border-radius: 22px; background: var(--parch); box-shadow: 0 0 0 3px var(--gold), 0 10px 26px rgba(0,0,0,.35); cursor: pointer; z-index: 12; }
+.obj.w12-dua b { font-family: "Amiri", serif; font-size: clamp(22px, 7.4vw, 30px); white-space: nowrap; line-height: 1.3; color: var(--ink); }
 .obj.w12-dua small { font-size: 15px; font-weight: 800; color: var(--muted); }
+.obj.w12-dua.pulse { animation: w12pulse 1.3s ease-in-out infinite; }
+@keyframes w12pulse { 50% { box-shadow: 0 0 0 3px var(--gold), 0 0 26px 6px rgba(255,214,120,.75); scale: 1.03; } }
 .obj.w12-dua.on { box-shadow: 0 0 0 3px var(--gold), 0 0 40px 10px rgba(255,214,120,.8); }
 .w12-warm { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 30% 60%, rgba(255,200,110,.35), rgba(255,200,110,0) 70%); opacity: 0; transition: opacity 1.5s; z-index: 6; }
 `);
@@ -270,7 +272,7 @@ async function chWater() {
   beach.style.bottom = "0"; beach.style.height = "40%";
   vignette();
   /* банка */
-  const tw = Math.round(Math.min(W * 0.64, 280)), th = Math.round(tw * 0.62), tankTop = H * 0.56, ty0 = th - 6, maxH = th * 0.82;
+  const tw = Math.round(Math.min(W * 0.64, 280)), th = Math.round(tw * 0.62), tankTop = H * 0.6, ty0 = th - 6, maxH = th * 0.82;
   const tank = obj("w12-tank", `<svg viewBox="0 0 ${tw} ${th}" aria-hidden="true"><defs><linearGradient id="w12gTank" x1="0" y1="1" x2="0" y2="0">
       <stop class="s0" offset="0" stop-color="${W12C.salt}"/><stop class="s1" offset=".5" stop-color="${W12C.salt}"/><stop class="s2" offset=".5" stop-color="${W12C.fresh}"/><stop class="s3" offset="1" stop-color="${W12C.fresh}"/></linearGradient></defs>
     <rect class="wat" x="6" y="${ty0}" width="${tw - 12}" height="0" fill="url(#w12gTank)"/>
@@ -317,7 +319,7 @@ async function chWater() {
   tank.animate([{ rotate: "0deg" }, { rotate: "-1.5deg" }, { rotate: "1.5deg" }, { rotate: "0deg" }], { duration: 600 });
   await say("water_4");
 
-  const probe = obj("w12-probe", ART.w12_tube, W * 0.5, Math.min(H * 0.88, H - 60), 34, 100); fadeIn(probe);
+  const probe = obj("w12-probe", ART.w12_tube, W * 0.5, Math.min(H - 56, tankTop + th + 60), 34, 100); fadeIn(probe);
   cue("water_5");
   const tL = W / 2 - tw / 2 + 10, tR = W / 2 + tw / 2 - 10, tB = tankTop + th - 8;
   await w12probe(probe, (x, y) => (x > tL && x < tR && y > surfaceY() + 4 && y < tB) ? { zone: x < W / 2 ? "L" : "R", label: "Смешалась", cls: "mix", col: W12C.mix } : null,
@@ -467,7 +469,7 @@ async function chDayNight() {
   /* закат и ночь */
   hideCap();
   sk.style.transition = "background 3.5s"; sk.style.background = "linear-gradient(180deg,#0C1D33 0%,#183A5C 60%,#2B5276 100%)";
-  veil.style.opacity = ".35"; stars.style.opacity = "1"; tracks.querySelector(".ts").style.transition = "opacity 2s"; tracks.querySelector(".ts").setAttribute("opacity", ".25");
+  veil.style.opacity = ".2"; stars.style.opacity = "1"; hl.style.transition = "filter 3.5s"; hl.style.filter = "brightness(.5) saturate(.8)"; tracks.querySelector(".ts").style.transition = "opacity 2s"; tracks.querySelector(".ts").setAttribute("opacity", ".25");
   Snd.amb("wind", 0.3);
   const s1 = sunT, m1 = moonT;
   for (let i = 1; i <= 70; i++) { sunT = s1 + (1.12 - s1) * i / 70; moonT = m1 + (0.45 - m1) * i / 70; place(); await sleep(50); }
@@ -484,7 +486,7 @@ async function chDayNight() {
 
 /* ============ ГЛАВА: ОН НИКОГДА НЕ СПИТ (2:255) ============ */
 function w12window(x, y, w, h, inner) {
-  const win = el("div", "w12-win", stage, `<div class="wsky"></div>${inner || ""}<div class="wbar" style="left:calc(50% - 3px);top:0;bottom:0;width:6px"></div><div class="wbar" style="top:calc(50% - 3px);left:0;right:0;height:6px"></div>`);
+  const win = el("div", "w12-win", stage, `<div class="wsky"></div>${inner || ""}<div class="wbar" style="left:calc(50% - 3px);top:0;height:100%;width:6px"></div><div class="wbar" style="top:calc(50% - 3px);left:0;width:100%;height:6px"></div>`);
   Object.assign(win.style, { left: x + "px", top: y + "px", width: w + "px", height: h + "px" });
   return win;
 }
@@ -501,8 +503,8 @@ async function chNoSleep() {
   const candle = obj("w12-candle", ART.w12_candle, W * 0.17, tableY - 62, 50, 130); candle.style.zIndex = 5;
   const cs = Math.min(W * 0.3, 120);
   const clock = obj("w12-clock", ART.w12_clock, W * 0.5, tableY - cs / 2 - 2, cs, cs); clock.style.zIndex = 5;
-  const torch = obj("w12-torch", ART.w12_torch, W * 0.82, tableY - 24, 96, 48); torch.style.zIndex = 5;
-  const beam = obj("w12-beam", ART.w12_beam, torch._x - 42 - 65, torch._y, 130, 98); beam.style.zIndex = 6; beam.style.transform = "rotate(32deg)"; beam.style.transformOrigin = "100% 50%"; beam.style.mixBlendMode = "screen";
+  const torch = obj("w12-torch", `<div style="width:100%;height:100%;transform:scaleX(-1)">${ART.w12_torch}</div>`, W * 0.8, tableY - 24, 96, 48); torch.style.zIndex = 5;
+  const beam = obj("w12-beam", `<div style="width:100%;height:100%;transform:scaleX(-1)">${ART.w12_beam}</div>`, torch._x + 42 + 65, torch._y, 130, 98); beam.style.zIndex = 6; beam.style.transform = "rotate(-50deg)"; beam.style.transformOrigin = "0% 50%"; beam.style.mixBlendMode = "screen";
   const cGlow = glowSpot(candle._x, candle._y - 42, 90); cGlow.style.zIndex = 6;
   const wring = obj("w12-wind off", "", clock._x, clock._y, cs * 1.45, cs * 1.45);
   const bars = [candle, clock, torch].map(o => { const b = el("div", "w12-bar", stage, "<i></i>"); b.style.left = o._x + "px"; b.style.top = (tableY + 26) + "px"; return b; });
@@ -623,7 +625,7 @@ async function chNoSleep() {
   const sk = sky("linear-gradient(180deg,#081A2C 0%,#12304A 60%,#1D4462 100%)");
   const st2 = el("div", "layer", stage, w12stars(70)); st2.style.inset = "0 0 30% 0"; st2.style.transition = "opacity 4s";
   const mn = obj("w12-moon", ART.w12_moon, W * 0.78, H * 0.4, 80, 80); mn.style.transition = "opacity 4s";
-  hills(0.3, ["#3E5E58", "#30504A", "#22403B"]);
+  const hl2 = hills(0.3); hl2.style.filter = "brightness(.4) saturate(.7)";
   [[0.18, 0.78, 46], [0.34, 0.8, 40], [0.66, 0.79, 44], [0.84, 0.81, 38]].forEach(([fx, fy, s]) => { const h = obj("house", ART.house, W * fx, H * fy, s, s); h.style.zIndex = 3; h.style.filter = "brightness(.45)"; });
   const veil = el("div", "nightveil"); veil.style.opacity = ".3"; veil.style.transition = "opacity 4s";
   vignette();
@@ -634,7 +636,7 @@ async function chNoSleep() {
   st2.style.opacity = "0"; mn.style.opacity = "0"; veil.style.opacity = "0";
   const sun = sunAt(W * 0.3, H * 0.85, 140); stage.insertBefore(sun, sk.nextSibling);
   sun.animate([{ top: (H * 0.85) + "px" }, { top: (H * 0.45) + "px" }], { duration: 4000, easing: "ease-out", fill: "forwards" });
-  stage.querySelectorAll(".obj.house").forEach(h => { h.style.transition = "filter 4s"; h.style.filter = "brightness(1)"; });
+  [hl2, ...stage.querySelectorAll(".obj.house")].forEach(h => { h.style.transition = "filter 4s"; h.style.filter = "brightness(1)"; });
   Snd.amb("meadow", 0.7); await sleep(2500);
   await say("nosleep_9");
   const misses = await choice("nosleep_q", [{ id: "nosleep_qa", icon: ICON.w12_clock }, { id: "nosleep_qb", icon: ICON.w12_torch }, { id: "nosleep_qc", ar: true, ok: true }], "nosleep_q_ok");
@@ -649,8 +651,8 @@ async function chNoSleep() {
 async function chEnough() {
   await toDark(); clearStage();
   const { W, H } = size();
-  el("div", "w12-room", stage, `<div class="wall"></div><div class="floor"></div>`);
-  const ww = Math.min(W * 0.5, 230), wh = ww * 0.86, wx = W / 2, wy = H * 0.47;
+  const room = el("div", "w12-room", stage, `<div class="wall"></div><div class="floor"></div>`);
+  const ww = Math.min(W * 0.5, 230, H * 0.25), wh = ww * 0.86, wx = W / 2, wy = H * 0.5;
   const win = w12window(wx, wy, ww, wh, `<div class="layer rain" style="inset:0">${Array.from({ length: 26 }, () => `<i style="left:${rnd(0, 100).toFixed(1)}%;animation-delay:${(-rnd(0, 1)).toFixed(2)}s;animation-duration:${rnd(0.5, 0.8).toFixed(2)}s"></i>`).join("")}</div>
     <div class="wrb" style="position:absolute;left:5%;right:5%;bottom:4%;opacity:0;transition:opacity 2.5s">${ART.w12_rainbow}</div><div class="w12-flash"></div>`);
   const wsky = win.querySelector(".wsky"); wsky.style.background = "linear-gradient(180deg,#26324A,#3E4F6C)";
@@ -662,7 +664,7 @@ async function chEnough() {
     s.style.zIndex = 6; Object.assign(s, o); s.closed = false; return s;
   });
   /* лампа и кнопка */
-  const tY = H * 0.74, lx = W * 0.2;
+  const tY = H * 0.76, lx = W * 0.2;
   const side = el("div", "w12-table", stage); Object.assign(side.style, { left: (lx - 46) + "px", width: "92px", top: tY + "px" });
   const legs = el("div", "", stage); Object.assign(legs.style, { position: "absolute", left: (lx - 36) + "px", width: "72px", top: (tY + 14) + "px", height: (H * 0.1) + "px", borderLeft: "8px solid #6A3E1C", borderRight: "8px solid #6A3E1C" });
   const lamp = obj("w12-lamp", ART.w12_lamp, lx, tY - 46, 72, 99); lamp.style.zIndex = 5;
@@ -697,7 +699,7 @@ async function chEnough() {
     Snd.noise({ kind: "brown", type: "lowpass", f: 160, dur: big ? 1.8 : 1.2, gain: big ? 0.4 : 0.2, attack: 0.15, at: 0.3 });
   };
   const rainT = setInterval(() => { if (storm) Snd.noise({ kind: "pink", type: "highpass", f: 2500, dur: 1.3, gain: 0.05, attack: 0.4 }); }, 1100);
-  const thT = setInterval(() => { if (storm) { thunder(); setFear(fv + 0.04); } }, 6500);
+  const thT = setInterval(() => { if (storm) thunder(); }, 7000);
   Snd.amb("wind", 0.6); fromDark(); await sleep(300);
   await chapterTitle(null, "Довольно нам Аллаха", "enough_0");
   thunder();
@@ -758,9 +760,10 @@ async function chEnough() {
   /* 4. довериться Аллаху */
   cue("enough_6");
   const dw = Math.min(W * 0.84, 340);
-  const dua = obj("w12-dua", `<b lang="ar" dir="rtl">${W12_HASBUNA}</b><small>Хасбуна-Ллаху ва ниъмаль-вакиль</small>`, W / 2, H * 0.5, dw, 120); fadeIn(dua);
-  await tapOnce(dua, null, 18000);
-  dua.classList.add("on"); Snd.sparkle(); celebrate();
+  const dua = obj("w12-dua", `<b lang="ar" dir="rtl">${W12_HASBUNA}</b><small>Хасбуна-Ллаху ва ниъмаль-вакиль</small>`, W / 2, H * 0.62, dw, 0); dua.style.height = "auto"; fadeIn(dua);
+  dua.classList.add("pulse");
+  await new Promise(r => { const t = setTimeout(r, 18000); dua.onpointerdown = ev => { ev.preventDefault(); clearTimeout(t); r(); }; });
+  dua.onpointerdown = null; dua.classList.remove("pulse"); dua.classList.add("on"); Snd.sparkle(); celebrate();
   storm = false; clearInterval(thT);
   for (let i = 1; i <= 20; i++) { setFear(fv * (1 - i / 20)); await sleep(60); }
   setFear(0); rain.style.opacity = ".25"; Snd.amb("wind", 0.2);
@@ -773,6 +776,8 @@ async function chEnough() {
   await Promise.all(shut.map(s => move(s, s.open, wy, 900, "ease-in-out")));
   wsky.style.background = "linear-gradient(180deg,#6CC0EA,#CDEBF7)"; rain.style.transition = "opacity 2s"; rain.style.opacity = "0";
   veil.style.opacity = "0"; warm.style.opacity = ".3"; rbow.style.opacity = "1";
+  const wall = room.querySelector(".wall"), floor = room.querySelector(".floor");
+  wall.style.transition = floor.style.transition = "filter 2.5s"; wall.style.filter = "brightness(2.1) saturate(.8)"; floor.style.filter = "brightness(1.7)";
   Snd.amb("meadow", 0.7); Snd.sparkle(); await sleep(2200);
   await say("enough_9");
   const misses = await choice("enough_q", [{ id: "enough_qa", icon: ICON.w12_shutters }, { id: "enough_qb", icon: ICON.w12_pause }, { id: "enough_qc", ar: true, ok: true }], "enough_q_ok");

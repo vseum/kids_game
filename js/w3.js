@@ -183,8 +183,8 @@ addCSS(`
 @keyframes w3wave { from { transform: skewY(-12deg) scaleX(.9); } to { transform: skewY(10deg) scaleX(1.05); } }
 .w3-flyleaf { position: absolute; width: 10px; height: 10px; border-radius: 0 70% 0 70%; background: #6DBE59; pointer-events: none; z-index: 7; }
 
-.w3-ln { stroke: #E6A93A; stroke-width: 4.5; stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 1s ease; }
-.w3-ln.on { stroke-dashoffset: 0; filter: drop-shadow(0 0 4px rgba(255,200,80,.95)); }
+.w3-ln { stroke: #E6A93A; stroke-width: 4.5; stroke-dasharray: 1; stroke-dashoffset: 1; opacity: 0; transition: stroke-dashoffset 1s ease, opacity .2s; }
+.w3-ln.on { stroke-dashoffset: 0; opacity: 1; filter: drop-shadow(0 0 4px rgba(255,200,80,.95)); }
 .w3-bookobj { filter: drop-shadow(0 14px 20px rgba(10,20,40,.35)); }
 .obj.w3-card { display: flex; align-items: center; justify-content: center; text-align: center; padding: 8px 12px; border-radius: 20px; background: var(--cream);
   color: var(--ink); font-weight: 900; font-size: 17px; line-height: 1.2; box-shadow: 0 5px 0 #E3D3AE, 0 12px 20px -10px rgba(0,0,0,.45); touch-action: none; cursor: pointer; transition: opacity .3s, box-shadow .25s; }
@@ -200,13 +200,14 @@ addCSS(`
   box-shadow: 0 4px 0 #D9C59A, 0 10px 16px -8px rgba(0,0,0,.4); touch-action: none; cursor: pointer; transition: box-shadow .25s, opacity .4s; }
 .obj.w3-pl small { font-size: 12px; font-weight: 800; color: var(--muted); line-height: 1; }
 .obj.w3-pl b { font-size: 19px; font-weight: 900; line-height: 1.15; white-space: nowrap; }
+@media (max-width: 360px) { .obj.w3-pl b { font-size: 16px; } .w3-plate { font-size: 13px; padding: 3px 7px; } .w3-plate .w3-saw { font-size: .85em; } .obj.w3-bk { font-size: 16px; } }
 .obj.w3-pl.w3-done { box-shadow: 0 4px 0 #D9C59A, 0 0 0 3px var(--gold); }
 .w3-saw { font-family: "Amiri", serif; font-weight: 700; color: var(--gold-3); }
 .w3-lines line { stroke-linecap: round; }
 .w3-lines .w3-tmp { stroke: rgba(255,255,255,.95); stroke-width: 5; stroke-dasharray: 2 9; }
 .w3-lines .w3-lk { stroke: #F5C451; stroke-width: 6; filter: drop-shadow(0 0 5px rgba(245,196,81,.9)); }
-.w3-lines .w3-demo { stroke: #F5C451; stroke-width: 5; stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset .9s ease, opacity .5s; }
-.w3-lines .w3-demo.on { stroke-dashoffset: 0; }
+.w3-lines .w3-demo { stroke: #F5C451; stroke-width: 5; stroke-dasharray: 1; stroke-dashoffset: 1; opacity: 0; transition: stroke-dashoffset .9s ease, opacity .3s; }
+.w3-lines .w3-demo.on { stroke-dashoffset: 0; opacity: 1; }
 .w3-dotlight { position: absolute; width: 10px; height: 10px; border-radius: 50%; translate: -50% -50%; background: #FFF3C4; box-shadow: 0 0 10px 3px rgba(255,214,110,.9); pointer-events: none; z-index: 7; }
 
 .obj.w3-bc { touch-action: none; cursor: pointer; }
@@ -218,8 +219,8 @@ addCSS(`
 .w3-plate { position: absolute; left: 50%; top: 100%; translate: -50% 6px; padding: 4px 10px; border-radius: 12px; background: var(--parch); color: var(--night-2); font-weight: 900; font-size: 15px; line-height: 1.2; white-space: nowrap; box-shadow: 0 3px 0 #C9B58C; }
 .obj.w3-bc.lit .w3-plate { box-shadow: 0 3px 0 #C9B58C, 0 0 0 2.5px var(--gold); }
 .w3-road path { fill: none; stroke-linecap: round; }
-.w3-road .w3-rd { stroke: #FFE07A; stroke-width: 5; stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 1.1s ease; filter: drop-shadow(0 0 6px rgba(255,214,110,.95)); }
-.w3-road .w3-rd.on { stroke-dashoffset: 0; }
+.w3-road .w3-rd { stroke: #FFE07A; stroke-width: 5; stroke-dasharray: 1; stroke-dashoffset: 1; opacity: 0; transition: stroke-dashoffset 1.1s ease, opacity .3s; filter: drop-shadow(0 0 6px rgba(255,214,110,.95)); }
+.w3-road .w3-rd.on { stroke-dashoffset: 0; opacity: 1; }
 .w3-road .w3-rdx { stroke: rgba(255,243,196,.5); stroke-width: 3; stroke-dasharray: 3 9; }
 
 .w3-pillar { position: absolute; width: 14px; translate: -50% 0; border-radius: 7px; background: linear-gradient(90deg, #B9802A, #F5C451, #B9802A); z-index: 4; }
@@ -339,7 +340,7 @@ async function chIman() {
   Snd.amb("wind", 0.6); fromDark(); await sleep(300);
   await chapterTitle(null, "Вера в Аллаха", "iman_0");
   await say("iman_1");
-  const S = Math.min(W * 0.62, 260), cx = W / 2, cy = H * 0.6, R = S * 0.62;
+  const S = Math.min(W * 0.62, 260), cx = W / 2, cy = H * (H < 640 ? 0.63 : 0.6), R = S * 0.62;
   const shrink = async (e, x, y) => { e.style.transform = "scale(.42)"; await move(e, x, y, 900, "ease-in-out"); };
 
   /* гора: тысячи лет — и она рассыпается */
@@ -519,7 +520,7 @@ async function chAngels() {
   w3Stars(50, "35%");
   const glow = glowSpot(W / 2, H * 0.52, Math.min(W, H) * 0.55, "255,236,190"); glow.style.zIndex = 1; glow.style.opacity = ".5";
   const bw = Math.min(W * 0.9, 400), bh = bw * 190 / 300;
-  const book = obj("w3-bookobj", ART.w3_book, W / 2, H * 0.53, bw, bh); book.style.zIndex = 5;
+  const book = obj("w3-bookobj", ART.w3_book, W / 2, H * (H < 640 ? 0.56 : 0.53), bw, bh); book.style.zIndex = 5;
   vignette();
   Snd.amb("wind", 0.3); fromDark(); await sleep(400);
   await say("angels_5");
@@ -589,7 +590,9 @@ async function chBooks() {
   const g = lay.querySelector("g");
   vignette();
   const bw = Math.min(W * 0.36, 150), bh = 60, pw = Math.min(W * 0.38, 160), ph = 62;
-  const rows = [0, 1, 2, 3].map(i => H * (0.43 + i * 0.13)), bx = W * 0.25, px = W * 0.75;
+  /* на низких экранах подпись выше: ряды начинаются ниже и стоят теснее */
+  const top0 = H * (H < 640 ? 0.5 : 0.43), step = Math.min(H * 0.13, (H - 44 - top0) / 3);
+  const rows = [0, 1, 2, 3].map(i => top0 + i * step), bx = W * 0.25, px = W * 0.75;
   const BK = [["Таурат", "#8E5A2E", "books_m1"], ["Забур", "#2F6E8E", "books_m2"], ["Инджиль", "#6A4C93", "books_m3"], ["Коран", "#1F6E58", "books_m4"]];
   const PR = ["Муса", "Дауд", "Иса", `Мухаммад <span class="w3-saw">ﷺ</span>`];
   const books = BK.map(([name, col, s], k) => { const b = obj("w3-bk", `<span>${name}</span>`, bx, rows[k], bw, bh); b.style.background = col; b.style.zIndex = 6; b._k = k; b._say = s; b.dataset.k = k; b.style.opacity = "0"; return b; });
@@ -675,14 +678,21 @@ async function chProphets() {
   const rsvg = road.querySelector("svg");
   vignette();
   const P = [["Адам", ICON.w3_globe], ["Нух", ICON.ship], ["Ибрахим", ICON.w3_kaaba], ["Муса", ICON.w3_tablets], ["Иса", ICON.w3_palm], [`Мухаммад <span class="w3-saw">ﷺ</span>`, ICON.w3_openbook]];
-  const slots = [[0.18, 0.47], [0.5, 0.47], [0.82, 0.47], [0.18, 0.75], [0.5, 0.75], [0.82, 0.75]];
+  const small = H < 640, r1 = small ? 0.55 : 0.47, r2 = small ? 0.8 : 0.75, c1 = W < 360 ? 0.16 : 0.18;
+  const slots = [[c1, r1], [0.5, r1], [1 - c1, r1], [c1, r2], [0.5, r2], [1 - c1, r2]];
   let perm = [0, 1, 2, 3, 4, 5];
-  do { perm = perm.sort(() => Math.random() - 0.5); } while (perm.slice(0, 3).every((v, i) => v === i) || perm.every((v, i) => v === i));
-  const bw = 56, bh = 84;
+  /* порядок на карте случайный, но последний маяк — в нижнем ряду: под ним пустой кружок «в конце дороги» */
+  do { perm = perm.sort(() => Math.random() - 0.5); } while (perm.slice(0, 3).every((v, i) => v === i) || perm[5] < 3);
+  const bw = small ? 48 : 56, bh = small ? 72 : 84;
   const beacons = P.map(([name, icon], k) => {
     const [fx, fy] = slots[perm[k]];
     const b = obj("w3-bc", `${ART.w3_beacon}<span class="w3-badge"><svg viewBox="0 0 48 48" aria-hidden="true">${icon}</svg></span><span class="w3-plate">${name}</span>`, W * fx, H * fy - 16, bw, bh);
-    b.style.zIndex = 5; b._k = k; b.dataset.ord = k; return b;
+    b.style.zIndex = 5; b._k = k; b.dataset.ord = k;
+    /* табличка у края экрана сдвигается внутрь, чтобы имя не обрезалось */
+    const pl = b.querySelector(".w3-plate"), half = pl.offsetWidth / 2;
+    const shift = Math.min(0, W - 6 - (b._x + half)) || Math.max(0, 6 - (b._x - half));
+    if (shift) pl.style.translate = `calc(-50% + ${shift.toFixed(0)}px) 6px`;
+    return b;
   });
   Snd.amb("wind", 0.35); fromDark(); await sleep(300);
   await chapterTitle(null, "Пророки", "prophets_0");
@@ -691,7 +701,10 @@ async function chProphets() {
   const NS = "http://www.w3.org/2000/svg";
   const flameAt = b => ({ x: b._x, y: b._y - bh / 2 + 10 });
   const beam = (a, c, cls) => {
-    const p = document.createElementNS(NS, "path"), mx = (a.x + c.x) / 2, my = Math.min(a.y, c.y) - 50;
+    /* дуга выгибается вбок от прямой: так луч не проходит через таблички */
+    const p = document.createElementNS(NS, "path"), dx = c.x - a.x, dy = c.y - a.y, d = Math.hypot(dx, dy) || 1;
+    let nx = dy / d, ny = -dx / d; if (ny > 0 || (ny === 0 && nx < 0)) { nx = -nx; ny = -ny; }
+    const k = Math.abs(dx) < 30 ? 0.42 : 0.25, mx = (a.x + c.x) / 2 + nx * d * k, my = (a.y + c.y) / 2 + ny * d * k;
     p.setAttribute("d", `M${a.x.toFixed(0)} ${a.y.toFixed(0)} Q${mx.toFixed(0)} ${my.toFixed(0)} ${c.x.toFixed(0)} ${c.y.toFixed(0)}`);
     p.setAttribute("pathLength", "1"); p.setAttribute("class", cls); rsvg.appendChild(p);
     requestAnimationFrame(() => requestAnimationFrame(() => p.classList.add("on")));
@@ -715,10 +728,10 @@ async function chProphets() {
 
   /* после печати пророков маяков больше нет */
   const last = flameAt(beacons[5]);
-  const ex = Math.max(50, Math.min(W - 50, last.x < W / 2 ? last.x + W * 0.22 : last.x - W * 0.22)), ey = H * 0.92;
-  const empty = obj("w3-empty", `<svg viewBox="0 0 60 60" aria-hidden="true"><circle cx="30" cy="30" r="24" fill="rgba(255,243,196,.08)" stroke="rgba(255,243,196,.7)" stroke-width="3" stroke-dasharray="5 6"/><text x="30" y="40" text-anchor="middle" font-family="Nunito, sans-serif" font-size="28" font-weight="900" fill="rgba(255,243,196,.75)">?</text></svg>`, ex, ey, 60, 60);
+  const es = small ? 48 : 60, ex = last.x, ey = Math.min(H - es / 2 - 6, beacons[5]._y + bh / 2 + 80);
+  const empty = obj("w3-empty", `<svg viewBox="0 0 60 60" aria-hidden="true"><circle cx="30" cy="30" r="24" fill="rgba(255,243,196,.08)" stroke="rgba(255,243,196,.7)" stroke-width="3" stroke-dasharray="5 6"/><text x="30" y="40" text-anchor="middle" font-family="Nunito, sans-serif" font-size="28" font-weight="900" fill="rgba(255,243,196,.75)">?</text></svg>`, ex, ey, es, es);
   empty.style.zIndex = 5; fadeIn(empty, 600);
-  const ln = document.createElementNS(NS, "path"); ln.setAttribute("d", `M${last.x} ${last.y + bh * 0.6} L${ex} ${ey - 30}`); ln.setAttribute("class", "w3-rdx"); rsvg.appendChild(ln);
+  const ln = document.createElementNS(NS, "path"); ln.setAttribute("d", `M${last.x} ${beacons[5]._y + bh / 2 + 40} L${ex} ${ey - 30}`); ln.setAttribute("class", "w3-rdx"); rsvg.appendChild(ln);
   cue("prophets_4");
   await tapOnce(empty, null, 15000);
   Snd.thud(0.25);
@@ -810,7 +823,7 @@ async function chLastday() {
   await toDark(); clearStage();
   sky("linear-gradient(180deg,#7DB6E0 0%,#C9D9EC 45%,#F7D6B8 75%,#FCEBD0 100%)");
   const { W, H } = size(); clouds(2, 0.26, 0.34); hills(0.22, ["#C9DEA6", "#A9CF8A", "#8BBE73"]); vignette();
-  const L0 = Math.min(W * 0.34, 150), cx = W / 2, py = H * 0.47, groundY = H * 0.86;
+  const L0 = Math.min(W * 0.34, 150), cx = W / 2, py = H * (H < 640 ? 0.6 : 0.5), groundY = H * (H < 640 ? 0.9 : 0.87);
   const sc = w3Scales(cx, py, groundY, L0);
   Snd.amb("meadow", 0.6); fromDark(); await sleep(300);
   await chapterTitle(null, "Судный день", "lastday_0");
@@ -834,7 +847,7 @@ async function chLastday() {
   const dust = obj("w3-dust", "<i></i>", W * 0.5, H * 0.79, 70, 70); dust.style.zIndex = 12; fadeIn(dust, 500);
   cue("lastday_4");
   await tapOnce(dust, null, 15000);
-  Snd.sparkle();
+  hideCap(); Snd.sparkle();
   const t = sc.right;
   await move(dust, t._x, t._y + 6, 900, "ease-in");
   dust.remove(); sc.add(1.6, true); Snd.tap();
@@ -871,7 +884,7 @@ function w3Catch(basket, goods, bads, need, timeout = 36000) {
     const spawn = () => {
       const good = pattern[k % pattern.length] === 1; k++;
       const q = good ? gq : bq, id = q.shift(); q.push(id);
-      const c = obj("w3-fc " + (good ? "good" : "bad"), `${good ? sun : storm}<span>${L(id).replace(/\.$/, "")}</span>`, rnd(W * 0.22, W * 0.78), H * 0.33, cw, 56);
+      const c = obj("w3-fc " + (good ? "good" : "bad"), `${good ? sun : storm}<span>${L(id).replace(/\.$/, "")}</span>`, rnd(W * 0.22, W * 0.78), H * (H < 640 ? 0.42 : 0.33), cw, 56);
       c._good = good; c._id = id; c._vy = H * rnd(0.14, 0.17); c.style.zIndex = 8; c.dataset.good = good ? "1" : "0"; fadeIn(c, 300); cards.push(c);
     };
     const catchIt = c => {
@@ -964,7 +977,7 @@ async function chQadar() {
   /* пикник дома, а дождь поливает сад */
   hideCap(); await toDark(); clearStage();
   el("div", "room", stage, `<div class="wall"></div><div class="floor"></div>`);
-  const win2 = obj("w3-window", ART.w3_win, W / 2, H * 0.42, ww, ww * 150 / 180); win2.style.zIndex = 2;
+  const ww2 = Math.min(W * 0.7, 300), win2 = obj("w3-window", ART.w3_win, W / 2, H * 0.55, ww2, ww2 * 150 / 180); win2.style.zIndex = 2;
   win2.querySelector(".w3-ws1").setAttribute("stop-color", "#8A99A4"); win2.querySelector(".w3-ws2").setAttribute("stop-color", "#C3CDD3");
   win2.querySelector(".w3-wland").setAttribute("fill", "#8DB07E");
   const wr = win2.querySelector(".w3-wrain"); wr.setAttribute("opacity", "1");
@@ -975,14 +988,14 @@ async function chQadar() {
   vignette();
   Snd.amb("sea", 0.3); fromDark(); await sleep(500);
   const fl = win2.querySelector(".w3-wfl");
-  const flowers = [[30, 108, "#E8584C"], [52, 100, "#F5C451"], [76, 104, "#B98AD8"], [104, 102, "#E8754F"], [128, 98, "#F5C451"], [150, 100, "#E8584C"]];
-  (async () => {
-    for (const [x, y, c] of flowers) {
-      if (!fl.isConnected) return;
-      fl.insertAdjacentHTML("beforeend", `<g class="w3-grow"><path d="M${x} ${y + 26} V${y}" stroke="#4E9D45" stroke-width="2.5"/><path d="M${x} ${y + 16} q-7 -2 -9 -8 q7 0 9 8" fill="#5DAE4F"/><circle cx="${x}" cy="${y}" r="6" fill="${c}"/><circle cx="${x}" cy="${y}" r="2.4" fill="#FFF3C4"/></g>`);
-      Snd.noise({ f: 2600, q: 10, dur: 0.12, gain: 0.06 }); await sleep(700);
-    }
-  })();
+  const flowers = [[30, 108, "#E8584C"], [104, 102, "#E8754F"], [52, 100, "#F5C451"], [128, 98, "#F5C451"], [76, 104, "#B98AD8"], [150, 100, "#E8584C"], [64, 112, "#E8754F"], [116, 110, "#B98AD8"]];
+  /* сначала просто смотрим в окно: под дождём вырастают цветы */
+  await sleep(600);
+  for (const [x, y, c] of flowers) {
+    fl.insertAdjacentHTML("beforeend", `<g class="w3-grow"><path d="M${x} ${y + 26} V${y}" stroke="#4E9D45" stroke-width="2.5"/><path d="M${x} ${y + 16} q-7 -2 -9 -8 q7 0 9 8" fill="#5DAE4F"/><circle cx="${x}" cy="${y}" r="6" fill="${c}"/><circle cx="${x}" cy="${y}" r="2.4" fill="#FFF3C4"/></g>`);
+    Snd.noise({ f: 2600, q: 10, dur: 0.12, gain: 0.06 }); await sleep(450);
+  }
+  await sleep(700);
   await say("qadar_7");
 
   /* на следующий день — солнце и парк */

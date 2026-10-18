@@ -184,6 +184,8 @@ function w4Stars(n, inset) {
   const s = el("div", "w4-stars", stage, `<svg viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice" aria-hidden="true"><g class="twinkle" fill="#FFF6DD">${Array.from({ length: n }, () => `<circle cx="${rnd(0, 400).toFixed(0)}" cy="${rnd(0, 290).toFixed(0)}" r="${rnd(0.5, 1.5).toFixed(1)}"/>`).join("")}</g></svg>`);
   s.style.inset = inset; return s;
 }
+/* Нижний край подписи (0, если скрыта): игровые объекты ставим ниже */
+function w4CapBottom() { if (cap.classList.contains("hidden")) return 0; return cap.getBoundingClientRect().bottom - stage.getBoundingClientRect().top; }
 function w4Counter(html, css) { const c = el("div", "w4-cnt", app, html); Object.assign(c.style, css); return c; }
 function w4Bump(e) { e.classList.remove("bump"); void e.offsetWidth; e.classList.add("bump"); }
 /* Расходящиеся кольца (азан, всплеск) */
@@ -267,11 +269,13 @@ async function chShahada() {
   Snd.amb("wind", 0.4); fromDark(); await sleep(300);
   await chapterTitle(null, "Шахада", "shahada_0");
   await say("shahada_1");
-  const pw = Math.min(W * 0.92, 440), ph = Math.round(Math.min(pw * 0.46, H * 0.24)), ty = H * 0.405 + ph / 2;
+  const pw = Math.min(W * 0.92, 440), ph = Math.round(Math.min(pw * 0.46, H * 0.24)); let ty = H * 0.405 + ph / 2;
   const tab = obj("w4-tablet", '<div class="w4-tin"></div>', W / 2, ty, pw, ph); tab.style.zIndex = 6; fadeIn(tab, 700);
   await say("shahada_2");
+  cue("shahada_3"); await sleep(80);
+  const cb = w4CapBottom();
+  if (cb + 12 > ty - ph / 2) { ty = Math.min(H - ph / 2 - 150, cb + 12 + ph / 2); await move(tab, W / 2, ty, 350, "ease-out"); }
   const bar = el("div", "w4-prog", stage, "<i></i>"); Object.assign(bar.style, { left: W / 2 + "px", top: (ty + ph / 2 + 14) + "px", width: (pw * 0.7) + "px" });
-  cue("shahada_3");
   await w4Trace(tab.querySelector(".w4-tin"), "لا إله إلا الله", p => { bar.firstChild.style.width = (p * 100).toFixed(1) + "%"; });
   fadeOut(bar, 400);
   const sub1 = el("div", "w4-sub", stage, "Ля иляха илля Ллах<br>Нет божества, кроме Аллаха"); Object.assign(sub1.style, { left: W / 2 + "px", top: (ty + ph / 2 + 12) + "px", width: (W - 32) + "px" }); fadeIn(sub1, 600);
@@ -294,7 +298,7 @@ async function chShahada() {
 function w4CatchSteps(ids, basin, basinY, bw, strip, onGood, onBad) {
   const { W, H } = size();
   return new Promise(res => {
-    const cw = Math.min(W * 0.42, 168), ch = 58, topY = H * 0.35, vy = H * 0.15;
+    const cw = Math.min(W * 0.42, 168), ch = 58, vy = H * 0.15;
     const cards = []; let next = 0, fin = false, spawnT = 0.3, last = performance.now(), targetX = basin._x, autoMode = false, noted = 0;
     const field = el("div", "tapfield"); field.style.zIndex = 8;
     const aim = ev => { targetX = Math.max(bw / 2, Math.min(W - bw / 2, local(ev).x)); idle.poke(); autoMode = false; };
@@ -310,6 +314,7 @@ function w4CatchSteps(ids, basin, basinY, bw, strip, onGood, onBad) {
       let k = next;
       if (onScreen || Math.random() < 0.45) { const others = ids.map((_, i) => i).filter(i => i !== next); k = others[Math.floor(Math.random() * others.length)]; }
       const x = rnd(cw / 2 + 8, W - cw / 2 - 8);
+      const topY = Math.min(basinY - 150, Math.max(H * 0.35, w4CapBottom() + ch / 2 + 6));
       const c = obj("w4-card", `<b>${k + 1}</b><span>${L(ids[k]).replace(/\.$/, "")}</span>`, x, topY, cw, ch); c.style.zIndex = 7; c.k = k; fadeIn(c, 300);
       cards.push(c);
     };
@@ -332,7 +337,7 @@ function w4CatchSteps(ids, basin, basinY, bw, strip, onGood, onBad) {
             onBad(c, next, noted++);
             c.animate([{ translate: "-50% -50%", rotate: "0deg", opacity: 1 }, { translate: `calc(-50% + ${c._x > W / 2 ? -90 : 90}px) calc(-50% - 120px)`, rotate: "40deg", opacity: 0 }], { duration: 700, easing: "ease-out", fill: "forwards" }).onfinish = () => c.remove();
           }
-        } else if (c._y > H + 60) { c.out = true; cards.splice(i, 1); c.remove(); }
+        } else if (c._y > basinY + 30) { c.out = true; cards.splice(i, 1); fadeOut(c, 250); }
       }
       requestAnimationFrame(loop);
     };
@@ -517,15 +522,15 @@ async function chSawm() {
   cue("sawm_3");
   const FOOD = [["w4_dates", "Финики"], ["w4_water", "Вода"], ["w4_bread", "Хлеб"], ["fruitc", "Яблоко"], ["w4_sweet", "Конфета"]];
   const GOOD = [["w4_book", "Читать Коран"], ["w4_beads", "Поминать Аллаха"], ["w4_kind", "Доброе слово"], ["w4_give", "Садака"], ["w4_broom", "Помочь дома"]];
-  const bs = Math.min(W * 0.24, 96), y0 = H * 0.4, y1 = H - 150;
-  const bubs = []; let good = 0, slips = 0, fi = 0, gi = 0, T = 0, last = performance.now(), spawnT = 0.2, fin = false, toldOnce = false;
+  const bs = Math.min(W * 0.24, 96), y0 = H * 0.47, y1 = H - 195;
+  const bubs = []; let noteT = null, good = 0, slips = 0, fi = 0, gi = 0, T = 0, last = performance.now(), spawnT = 0.2, fin = false, toldOnce = false;
   const DAY = 34;
   const spawn = () => {
     const isGood = Math.random() < 0.5;
     const [ic, label] = isGood ? GOOD[gi++ % GOOD.length] : FOOD[fi++ % FOOD.length];
     const lane = bubs.length ? bubs[bubs.length - 1].lane : -1;
     let ln = Math.floor(Math.random() * 3); if (ln === lane) ln = (ln + 1) % 3;
-    const b = obj("w4-bub" + (isGood ? " w4-good" : " w4-food"), `<div class="w4-bi"><svg viewBox="0 0 48 48" aria-hidden="true">${ICON[ic]}</svg><small>${label}</small></div>`, W + bs, y0 + (y1 - y0) * (ln / 2), bs, bs);
+    const b = obj("w4-bub" + (isGood ? " w4-good" : " w4-food"), `<div class="w4-bi"><svg viewBox="0 0 48 48" aria-hidden="true">${ICON[ic]}</svg><small>${label}</small></div>`, W + bs, (yt => yt + (y1 - yt) * (ln / 2))(Math.min(y1 - 40, Math.max(y0, w4CapBottom() + bs / 2 + 8))), bs, bs);
     b.style.zIndex = 8; b.lane = ln; b.good = isGood; b.ph = rnd(0, 6); b.vx = W / rnd(6.5, 8);
     b.onpointerdown = ev => {
       ev.preventDefault(); if (b.used) return; b.used = true;
@@ -535,7 +540,7 @@ async function chSawm() {
         b.gone = true;
       } else {
         slips++; Snd.thud(0.3); b.classList.add("w4-no"); b.vx *= 2.2;
-        capNote.textContent = L("sawm_4"); if (!toldOnce) { toldOnce = true; Voice.speak("sawm_4"); }
+        capNote.textContent = L("sawm_4"); clearTimeout(noteT); noteT = setTimeout(() => { capNote.textContent = ""; }, 2600); if (!toldOnce) { toldOnce = true; Voice.speak("sawm_4"); }
       }
     };
     bubs.push(b);
@@ -559,7 +564,7 @@ async function chSawm() {
     requestAnimationFrame(loop);
   });
   capNote.textContent = "";
-  fadeOut(bar, 400);
+  fadeOut(bar, 400); fadeOut(cnt, 400);
   /* ифтар */
   Snd.sparkle();
   await say("sawm_5");
@@ -573,7 +578,6 @@ async function chSawm() {
   await tapOnce(glass, () => { Snd.splash(); const w = glass.querySelector(".water"); if (w) w.setAttribute("d", "M17 80 L63 80 L62 101 L18 101 Z"); }, 15000);
   celebrate();
   await say("sawm_8");
-  fadeOut(cnt, 300);
   const misses = await choice("sawm_q", [{ id: "sawm_qa", icon: ICON.w4_sunrise }, { id: "sawm_qb", icon: ICON.w4_noon }, { id: "sawm_qc", icon: ICON.w4_sunset, ok: true }], "sawm_q_ok");
   await say("sawm_quran");
   await ayahCard("2:183");
@@ -746,8 +750,8 @@ function w4Route(pts, plane, stopAt, onStop) {
     };
     const near = ev => {
       if (!down || fin || paused) return; idle.poke();
-      const p = local(ev); let best = -1, bd = 60;
-      for (let j = i; j < Math.min(P.length, i + 40); j++) { const d = Math.hypot(P[j].x - p.x, P[j].y - p.y); if (d < bd) { bd = d; best = j; } }
+      const p = local(ev); let best = -1, bd = 70;
+      for (let j = i; j < Math.min(P.length, i + 60); j++) { const d = Math.hypot(P[j].x - p.x, P[j].y - p.y); if (d < bd) { bd = d; best = j; } }
       if (best > i) { if (Math.random() < 0.15) Snd.noise({ kind: "pink", f: 900, q: 1, dur: 0.15, gain: 0.05 }); advanceTo(best); }
     };
     const field = el("div", "tapfield"); field.style.zIndex = 8;

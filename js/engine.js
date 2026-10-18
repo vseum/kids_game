@@ -319,7 +319,7 @@ function ayahCard(key) {
       `<div class="acard">${["tl", "tr", "bl", "br"].map(c => `<svg class="star8 ${c}" viewBox="0 0 40 40" aria-hidden="true">${STAR8}</svg>`).join("")}<p class="lbl">Аят из Корана</p><p class="ref">${a.ref}</p><p class="ar" dir="rtl" lang="ar">${ar}</p>` +
       `<p class="tr"></p><p class="src">Перевод смыслов: Эльмир Кулиев</p>` +
       `<div class="abtns"><button class="btn teal" data-a="qari">▶ Чтец</button><button class="btn teal" data-a="tr">▶ Перевод</button><button class="btn" data-a="next">Дальше</button></div></div>`);
-    ov.querySelector(".tr").textContent = L(a.tr);
+    ov.querySelector("p.tr").textContent = L(a.tr);
     requestAnimationFrame(() => requestAnimationFrame(() => ov.classList.add("on")));
     Snd.sparkle();
     let closed = false;
