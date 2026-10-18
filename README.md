@@ -79,5 +79,5 @@ cd ../jarvis-azata && git add web/igra && git commit -m "Обновление и
 ## Источники
 - Текст аятов: [alquran.cloud](https://alquran.cloud) (quran-simple).
 - Перевод смыслов Корана: Эльмир Кулиев.
-- Чтение Корана: Мишари Рашид аль-Афаси (cdn.islamic.network).
+- Чтение Корана: Мишари Рашид аль-Афаси (cdn.islamic.network; нужные аяты лежат в `voice/qari/`, скачиваются и сжимаются заново по номерам аятов).
 - Голос: [Silero TTS](https://github.com/snakers4/silero-models) (v5_6_ru — CC BY-NC 4.0). Игра бесплатная, некоммерческая.

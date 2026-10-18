@@ -17,6 +17,8 @@ async function play(from, withIntro) {
     const st = misses === 0 ? 3 : misses === 1 ? 2 : 1;
     Save.d.done[c.id] = Math.max(Save.d.done[c.id] || 0, st); Save.save();
     await starsToast(st);
+    const wi = WORLDS.findIndex(w => w.ch.includes(c.id)), w = WORLDS[wi];
+    if (w.ch[w.ch.length - 1] === c.id && k < CHAPTERS.length - 1 && w.ch.every(id => Save.d.done[id])) await levelDone(wi);
   }
   await chFinal();
   showStart();
@@ -36,13 +38,19 @@ async function pickChapter() {
   play(k, false);
 }
 
+/* Приветствие по имени на стартовом экране */
+function showHello() { $("#hello").hidden = !Me.name; $("#hello b").textContent = Me.name; }
+/* Имя спрашиваем один раз, перед первой игрой (можно и без имени) */
+async function askName() { if (Save.d.name === undefined) { await nameSheet(); showHello(); } }
+
 Save.load(); Save.d.items = Save.d.items.filter(i => ITEMS.some(x => x.id === i)); updateBag(false);
 $("#goVoice").hidden = VOICES.length < 2;
-Voice.load().then(() => { $("#goVoice b").textContent = voiceName(); });
-showStart();
-$("#go").onclick = () => { Snd.tap(); play(0, true); };
-$("#goCont").onclick = () => { Snd.tap(); const k = nextUndone(); if (k != null) play(k, false); };
-$("#goCh").onclick = () => { Snd.tap(); pickChapter(); };
+Voice.load().then(() => { $("#goVoice b").textContent = voiceName(); Me.load(); });
+showHello(); showStart();
+$("#go").onclick = async () => { Snd.tap(); await askName(); play(0, true); };
+$("#goCont").onclick = async () => { Snd.tap(); await askName(); const k = nextUndone(); if (k != null) play(k, false); };
+$("#goCh").onclick = async () => { Snd.tap(); await askName(); pickChapter(); };
+$("#goName").onclick = async () => { Snd.tap(); await nameSheet(); showHello(); };
 $("#goVoice").onclick = async () => { Snd.tap(); await voiceSheet(); $("#goVoice b").textContent = voiceName(); };
 $("#tHome").onclick = () => { Snd.tap(); pickChapter(); };
 $("#tBag").onclick = () => { Snd.tap(); bagSheet(); };
