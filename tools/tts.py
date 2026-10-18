@@ -49,9 +49,13 @@ STRESS = {
 
 
 def load_lines():
-    s = (ROOT / "js" / "lines.js").read_text(encoding="utf-8")
-    start = s.index("\nwindow.LINES =") + len("\nwindow.LINES =")
-    return json.loads(s[start:s.rindex("};") + 1])
+    """Все реплики: js/lines.js и js/w*_lines.js. В каждом файле объект с репликами — чистый JSON."""
+    lines = {}
+    for f in sorted((ROOT / "js").glob("*lines*.js")):
+        s = f.read_text(encoding="utf-8")
+        start = s.index("{", s.index("window.LINES"))
+        lines.update(json.loads(s[start:s.rindex("}") + 1]))
+    return lines
 
 
 def prepare(text, stress=True):

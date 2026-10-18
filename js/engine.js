@@ -340,14 +340,24 @@ function ayahCard(key) {
 }
 
 /* ============ ЗАСТАВКА ГЛАВЫ ============ */
-async function chapterTitle(num, name, lineId) {
+/* Текущая глава (id): по ней заставка сама считает «Мир N · Глава M» */
+let CUR = null;
+function chapterPlace() {
+  const wi = WORLDS.findIndex(w => w.ch.includes(CUR));
+  return wi < 0 ? "" : `Мир ${wi + 1} · Глава ${WORLDS[wi].ch.indexOf(CUR) + 1}`;
+}
+/* Заставка главы. Первый параметр оставлен для совместимости и не используется */
+async function chapterTitle(_, name, lineId) {
   hideCap();
-  const t = el("div", "chtitle", app, `<div><small>Глава ${num}</small><b>${name}</b><svg class="orn" viewBox="0 0 120 16" aria-hidden="true"><path d="M0 8h44M76 8h44" stroke="#F5C451" stroke-width="1.5"/><path d="M60 1l4 7-4 7-4-7z" fill="#F5C451"/><circle cx="50" cy="8" r="2" fill="#F5C451"/><circle cx="70" cy="8" r="2" fill="#F5C451"/></svg></div>`);
+  const t = el("div", "chtitle", app, `<div><small>${chapterPlace()}</small><b>${name}</b><svg class="orn" viewBox="0 0 120 16" aria-hidden="true"><path d="M0 8h44M76 8h44" stroke="#F5C451" stroke-width="1.5"/><path d="M60 1l4 7-4 7-4-7z" fill="#F5C451"/><circle cx="50" cy="8" r="2" fill="#F5C451"/><circle cx="70" cy="8" r="2" fill="#F5C451"/></svg></div>`);
   requestAnimationFrame(() => requestAnimationFrame(() => t.classList.add("on")));
   Snd.sparkle();
   await Promise.all([Voice.speak(lineId), sleep(2200)]);
   t.classList.remove("on"); await sleep(600); t.remove();
 }
+
+/* Стили главы прямо из её файла (чтобы миры не правили общий style.css) */
+function addCSS(text) { const st = document.createElement("style"); st.textContent = text; document.head.appendChild(st); }
 
 /* ============ ВЗАИМОДЕЙСТВИЯ ============ */
 /* Ждём n нажатий на элемент. Если ребёнок не нажимает, через timeout игра идёт дальше сама */
