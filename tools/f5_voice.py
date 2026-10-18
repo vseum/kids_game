@@ -88,6 +88,7 @@ def main():
     ap.add_argument("--nfe", type=int, default=32, help="шаги генерации: больше — чище, но дольше")
     ap.add_argument("--missing", action="store_true")
     ap.add_argument("--dry", action="store_true", help="только показать тексты с ударениями")
+    ap.add_argument("--names", nargs="*", help="озвучить имена из tools/names.tsv (без списка — все) в voice/<name>/names/")
     ap.add_argument("ids", nargs="*")
     args = ap.parse_args()
 
@@ -118,6 +119,25 @@ def main():
 
     out_dir = VOICE / args.name
     out_dir.mkdir(parents=True, exist_ok=True)
+    if args.names is not None:   # имена: «Амина!» — тот же голос, отдельная папка и указатель names.json
+        _ns = importlib.util.spec_from_file_location("names_voice", Path(__file__).with_name("names_voice.py"))
+        nv = importlib.util.module_from_spec(_ns); _ns.loader.exec_module(nv)
+        allnames = nv.load(); want = set(args.names)
+        todo = [x for x in allnames if not want or x[0] in want]
+        (out_dir / "names").mkdir(exist_ok=True)
+        for k, (name, stressed, i) in enumerate(todo, 1):
+            out = out_dir / "names" / f"{i}.mp3"
+            if args.missing and out.exists():
+                continue
+            wav, sr, _ = infer_process(ref_audio, ref_text, stressed + "!", model, vocoder, nfe_step=args.nfe, speed=args.speed)
+            with tempfile.NamedTemporaryFile(suffix=".wav") as tmp:
+                sf.write(tmp.name, np.asarray(wav, dtype=np.float32), sr)
+                subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", tmp.name, "-af", "loudnorm=I=-16:TP=-1.5:LRA=11",
+                                "-ar", "44100", "-ac", "1", "-b:a", "64k", str(out)], check=True)
+            print(f"[{args.name} names {k}/{len(todo)}] {name}", flush=True)
+        have = [[name, i] for name, _, i in allnames if (out_dir / "names" / f"{i}.mp3").exists()]
+        (out_dir / "names.json").write_text(json.dumps(have, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
+        return
     for n, key in enumerate(ids, 1):
         out = out_dir / f"{key}.mp3"
         if args.missing and out.exists():
