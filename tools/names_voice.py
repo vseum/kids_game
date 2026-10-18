@@ -56,11 +56,11 @@ def main():
         if args.missing and out.exists():
             continue
         audio, rate = tts.Engine.say(args.speaker, stressed + "!")
-        pad = np.zeros(int(rate * 0.08), dtype=np.float32)
+        pad = np.zeros(int(rate * 0.03), dtype=np.float32)   # тишину не обрезаем: обрезка съедала тихие последние звуки коротких имён
         with tempfile.NamedTemporaryFile(suffix=".wav") as tmp:
             sf.write(tmp.name, np.concatenate([pad, audio, pad]), rate)
             subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", tmp.name, "-af",
-                            "silenceremove=start_periods=1:start_threshold=-45dB,areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse,loudnorm=I=-16:TP=-1.5:LRA=11",
+                            "loudnorm=I=-16:TP=-1.5:LRA=11",
                             "-ar", "44100", "-ac", "1", "-b:a", "64k", str(out)], check=True)
         if n % 100 == 0:
             print(f"[{args.speaker}] {n}/{len(names)}", flush=True)
