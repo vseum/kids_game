@@ -37,16 +37,15 @@ python3 -m http.server 8000
 и открыть http://localhost:8000
 
 ## Озвучка
-Голос делается бесплатными нейросетями **Silero TTS** и **Piper**. После того как модель скачана, она работает без интернета, без ключей и без оплаты.
+Сейчас в игре один голос — **Евгений** (`eugene`, Silero TTS). Модель бесплатная и после скачивания работает без интернета.
 ```
 pip install torch --index-url https://download.pytorch.org/whl/cpu
 pip install numpy scipy soundfile omegaconf piper-tts
-python3 tools/tts.py --all                 # все пять голосов
-python3 tools/tts.py --speaker xenia b1    # одна реплика одним голосом
+python3 tools/tts.py --missing             # озвучить новые реплики
+python3 tools/tts.py b1                    # переозвучить одну реплику
 ```
-- **Голоса:** `xenia`, `baya`, `kseniya` (женские), `aidar`, `eugene`, `alexandr`, `roman` (мужские, Silero), `denis`, `ruslan` (мужские, Piper). Файлы каждого голоса лежат в `voice/<голос>/`, таблица голосов — `VOICES` в `tools/tts.py`.
-- **Выбор в игре:** на стартовом экране кнопка «Голос». Там каждый голос можно послушать и выбрать. Голос по умолчанию — `xenia`. Можно открыть игру сразу с нужным голосом: `?golos=aidar`.
-- **Неправильное ударение:** добавьте слово в словарь `STRESS` в `tools/tts.py`, знак `+` ставится перед ударной гласной.
+- **Неправильное ударение:** добавьте слово в словарь `STRESS` в `tools/tts.py` (знак `+` ставится перед ударной гласной), арабскую фразу целиком — в `PHRASES`.
+- **Свой голос (F5-TTS, клонирование):** `tools/f5_voice.py` или блокнот `tools/f5_colab.ipynb` для бесплатного GPU в Google Colab. Нужна запись 15–30 секунд. Готовую папку `voice/<имя>/` добавьте строкой в `VOICES` в `js/engine.js`: при двух голосах и больше на стартовом экране появится выбор голоса.
 
 Если файла озвучки нет, игра читает реплику голосом телефона.
 
@@ -74,11 +73,11 @@ cd ../jarvis-azata && git add web/igra && git commit -m "Обновление и
 
 ## Как добавить главу
 1. Добавьте реплики в `js/lines.js` и аят в `js/ayat.js` (текст аята берите с https://api.alquran.cloud, издание `quran-simple`).
-2. Напишите функцию главы в `js/chapters.js` по образцу `chBird` и добавьте её в список `CHAPTERS`, а её `id` — в нужный мир в `WORLDS`.
-3. Озвучьте новые реплики: `python3 tools/tts.py --speaker xenia --missing`.
+2. Напишите функцию главы в `js/chapters.js` (или в свой файл `js/wN.js`) по образцу `chSky` и зарегистрируйте: `regChapter(<номер мира>, { id, name, icon, fn, lines })`.
+3. Озвучьте новые реплики: `python3 tools/tts.py --missing`.
 
 ## Источники
 - Текст аятов: [alquran.cloud](https://alquran.cloud) (quran-simple).
 - Перевод смыслов Корана: Эльмир Кулиев.
 - Чтение Корана: Мишари Рашид аль-Афаси (cdn.islamic.network).
-- Голоса: [Silero TTS](https://github.com/snakers4/silero-models) (v5_6_ru — CC BY-NC 4.0, v5_cis_base — MIT) и [Piper](https://github.com/rhasspy/piper) (denis — датасет CC0, ruslan — CC BY-NC-SA 4.0). Игра бесплатная, некоммерческая.
+- Голос: [Silero TTS](https://github.com/snakers4/silero-models) (v5_6_ru — CC BY-NC 4.0). Игра бесплатная, некоммерческая.

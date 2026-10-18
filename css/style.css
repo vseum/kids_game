@@ -205,7 +205,9 @@ button { font: inherit; cursor: pointer; border: 0; color: inherit; background: 
 .whead small { display: block; font-size: 13.5px; color: var(--muted); font-weight: 700; }
 .wbar { height: 6px; border-radius: 3px; background: rgba(18,49,63,.1); margin-top: 6px; overflow: hidden; }
 .wbar i { display: block; height: 100%; background: linear-gradient(90deg, var(--gold), var(--gold-2)); border-radius: 3px; }
-.chlist { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.chlist { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.ch > span:last-child { min-width: 0; overflow-wrap: break-word; hyphens: auto; }
+.ch .nw { white-space: nowrap; }
 .ch {
   display: flex; align-items: center; gap: 10px; min-height: 62px; padding: 8px 10px; border-radius: 16px; background: #fff;
   text-align: left; font-weight: 900; font-size: 15px; line-height: 1.15; color: var(--ink);
@@ -443,4 +445,10 @@ button { font: inherit; cursor: pointer; border: 0; color: inherit; background: 
 @media (max-height: 600px) {
   .acard .ref { margin-bottom: 8px; }
   .abtns .btn { min-height: 44px; }
+}
+@media (max-width: 380px) {
+  .sheet-in { padding: 22px 12px 16px; }
+  .world { padding: 12px 10px; }
+  .ch { flex-direction: column; justify-content: flex-start; gap: 6px; padding: 10px 6px 9px; font-size: 14.5px; text-align: center; }
+  .ch > span:last-child { overflow-wrap: normal; hyphens: manual; }
 }

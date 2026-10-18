@@ -143,7 +143,7 @@ class Engine:
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--speaker", default="xenia", choices=SPEAKERS)
+    ap.add_argument("--speaker", default="eugene", choices=SPEAKERS)
     ap.add_argument("--all", action="store_true", help="озвучить всеми голосами")
     ap.add_argument("--missing", action="store_true", help="озвучить только реплики без файла")
     ap.add_argument("ids", nargs="*")

@@ -37,6 +37,7 @@ async function pickChapter() {
 }
 
 Save.load(); Save.d.items = Save.d.items.filter(i => ITEMS.some(x => x.id === i)); updateBag(false);
+$("#goVoice").hidden = VOICES.length < 2;
 Voice.load().then(() => { $("#goVoice b").textContent = voiceName(); });
 showStart();
 $("#go").onclick = () => { Snd.tap(); play(0, true); };

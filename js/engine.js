@@ -145,19 +145,11 @@ document.addEventListener("visibilitychange", () => {
 
 /* ============ ГОЛОС: записи из папки voice/, а если их нет - голос телефона ============ */
 /* Голоса озвучки: файлы лежат в voice/<id>/ */
-const VOICES = [
-  { id: "xenia", name: "Ксения", g: "женский" },
-  { id: "baya", name: "Бая", g: "женский" },
-  { id: "kseniya", name: "Ксюша", g: "женский" },
-  { id: "aidar", name: "Айдар", g: "мужской" },
-  { id: "eugene", name: "Евгений", g: "мужской" },
-  { id: "alexandr", name: "Александр", g: "мужской" },
-  { id: "roman", name: "Роман", g: "мужской" },
-  { id: "denis", name: "Денис", g: "мужской" },
-  { id: "ruslan", name: "Руслан", g: "мужской" }
+const VOICES = [   /* новый голос — строка сюда и папка voice/<id>/; при двух и больше голосах на старте появится выбор */
+  { id: "eugene", name: "Евгений", g: "мужской" }
 ];
 const Voice = {
-  on: true, sp: "xenia", have: new Set(), cache: new Map(), cur: null, ru: null, seq: 0, qari: null, ready: null,
+  on: true, sp: VOICES[0].id, have: new Set(), cache: new Map(), cur: null, ru: null, seq: 0, qari: null, ready: null,
   load() { return this.ready || (this.ready = this.init()); },
   async init() {
     let saved = null;
@@ -433,7 +425,7 @@ function chaptersSheet() {
           const ch = CHAPTERS.find(x => x.id === c);
           if (!ch) return `<div class="ch soon"><span class="ci">${LOCK}</span><span>${c}<span class="stars">скоро</span></span></div>`;
           const st = Save.d.done[c] || 0;
-          return `<button class="ch" data-id="${c}"><span class="ci"><svg viewBox="0 0 48 48" aria-hidden="true">${ch.icon}</svg></span><span>${ch.name}<span class="stars">${st ? "★".repeat(st) + "☆".repeat(3 - st) : "играть"}</span></span></button>`;
+          return `<button class="ch" data-id="${c}"><span class="ci"><svg viewBox="0 0 48 48" aria-hidden="true">${ch.icon}</svg></span><span>${ch.name.replace(/^(Аль|Ан|Ас|Ад)-(\S+)/, '<span class="nw">$1-$2</span>')}<span class="stars">${st ? "★".repeat(st) + "☆".repeat(3 - st) : "играть"}</span></span></button>`;
         }).join("") + `</div></div>`;
     }).join("");
     const ov = sheet(`<h2>Главы</h2>${html}<div class="row"><button class="btn line" id="shClose">Закрыть</button></div>`);
