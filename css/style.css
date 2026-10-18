@@ -423,3 +423,7 @@ button { font: inherit; cursor: pointer; border: 0; color: inherit; background: 
 .counter2.big { left: 50%; right: auto; translate: -50% 0; font-size: 20px; }
 .plus { position: absolute; padding: 4px 10px; border-radius: 12px; background: rgba(12, 38, 52, .8); color: #FFE7A0; font-weight: 900; font-size: 15px; white-space: nowrap; pointer-events: none; }
 .obj.thing.got { filter: drop-shadow(0 0 10px rgba(245,196,81,.9)); }
+
+/* финал: когда сокровищ много, они мельче */
+.items-row.many { gap: 8px 10px; bottom: 8%; }
+.items-row.many svg { width: 42px; height: 42px; animation-duration: 4s; }

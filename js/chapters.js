@@ -1119,7 +1119,9 @@ async function chFinal() {
   await toDark(); clearStage();
   sky("linear-gradient(180deg,#24557A 0%,#C98A6B 55%,#F6D79A 100%)");
   const { W, H } = size(); sunAt(W * 0.5, H * 0.44, 170); hills(0.3, ["#7E9E78", "#5E8A64", "#3F6E52"]); vignette();
-  el("div", "items-row", stage, ITEMS.filter(i => Save.d.items.includes(i.id)).map(i => `<svg viewBox="0 0 100 100" aria-hidden="true">${i.svg}</svg>`).join(""));
+  const got = ITEMS.filter(i => Save.d.items.includes(i.id));
+  const row = el("div", "items-row", stage, got.map(i => `<svg viewBox="0 0 100 100" aria-hidden="true">${i.svg}</svg>`).join(""));
+  row.classList.toggle("many", got.length > 8);
   Snd.amb("wind", 0.6); fromDark(); await sleep(500);
   celebrate();
   await say("fin1");
