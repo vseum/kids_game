@@ -526,3 +526,33 @@ button { font: inherit; cursor: pointer; border: 0; color: inherit; background: 
 /* следующая глава в списке — слегка подсвечена */
 .ch.next { box-shadow: 0 3px 0 #E2C77E, 0 0 0 2.5px rgba(230,169,58,.75), 0 8px 14px -10px rgba(0,0,0,.35); background: #FFFBEF; }
 .ch.next .stars { color: var(--gold-3); }
+/* ---------- подписка ---------- */
+.ch { position: relative; }
+.ch.lock { background: rgba(255,255,255,.75); }
+.ch.lock .ci { filter: grayscale(.5); opacity: .8; }
+.ch.lock .stars { color: #A9BCC2; letter-spacing: 0; font-size: 12px; }
+.chlock { position: absolute; right: 8px; top: 8px; width: 18px; height: 18px; }
+.chlock svg { width: 100%; height: 100%; }
+.paysheet .sheet-in { max-width: 420px; }
+.paysheet h2 { margin-bottom: 0; }
+.pfeat { list-style: none; margin: 14px 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.pfeat li { position: relative; padding: 10px 12px 10px 40px; border-radius: 14px; background: #fff; font-weight: 800; color: var(--night-2); box-shadow: 0 2px 0 #E6D7B5; }
+.pfeat li::before { content: "✓"; position: absolute; left: 14px; top: 9px; color: var(--ok); font-weight: 900; }
+.pgate { text-align: center; padding: 6px 0 4px; }
+.pgate p { margin: 0 0 10px; font-weight: 800; color: var(--muted); }
+.pgate p b { color: var(--night-2); font-size: 20px; }
+.gans { display: flex; gap: 10px; justify-content: center; }
+.gbtn { width: 64px; height: 54px; border-radius: 16px; background: #fff; font-weight: 900; font-size: 22px; color: var(--night-2); box-shadow: 0 3px 0 #E6D7B5; }
+.gbtn.no { opacity: .35; }
+.plans { display: flex; flex-direction: column; gap: 10px; margin: 6px 0 10px; }
+.plan { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px; border-radius: 18px; background: #fff; color: var(--night-2); box-shadow: 0 3px 0 #E6D7B5; }
+.plan b { font-size: 20px; font-weight: 900; } .plan small { font-size: 13px; font-weight: 700; color: var(--muted); }
+/* выгодный вариант слегка выделен */
+.plan.main { background: linear-gradient(180deg, #FFF6DA, #FFE9AE); box-shadow: 0 3px 0 #E2C77E, 0 0 0 2px rgba(230,169,58,.6); }
+.pbuy .btn.line { width: 100%; }
+.poffer { font-size: 12px !important; margin-top: 10px !important; }
+.poffer a { color: var(--muted); }
+.pnote { margin: 8px 0 12px !important; }
+.pcode { display: block; margin: 8px 0; font-size: 26px; letter-spacing: 2px; color: var(--night-2); }
+.pmsgbig { font-size: 16px !important; line-height: 1.45; }
+.pcin { text-transform: uppercase; letter-spacing: 2px; }

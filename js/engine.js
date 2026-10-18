@@ -496,8 +496,8 @@ function chaptersSheet() {
         w.ch.map(c => {
           const ch = CHAPTERS.find(x => x.id === c);
           if (!ch) return `<div class="ch soon"><span class="ci">${LOCK}</span><span>${c}<span class="stars">скоро</span></span></div>`;
-          const st = Save.d.done[c] || 0, nx = next && next.id === c;
-          return `<button class="ch${nx ? " next" : ""}" data-id="${c}"><span class="ci"><svg viewBox="0 0 48 48" aria-hidden="true">${ch.icon}</svg></span><span>${ch.name.replace(/^(Аль|Ан|Ас|Ад)-(\S+)/, '<span class="nw">$1-$2</span>')}<span class="stars">${st ? "★".repeat(st) + "☆".repeat(3 - st) : nx ? "дальше ▶" : "играть"}</span></span></button>`;
+          const st = Save.d.done[c] || 0, nx = next && next.id === c, lk = !Pay.canPlay(c);
+          return `<button class="ch${nx ? " next" : ""}${lk ? " lock" : ""}" data-id="${c}"><span class="ci"><svg viewBox="0 0 48 48" aria-hidden="true">${ch.icon}</svg></span><span>${ch.name.replace(/^(Аль|Ан|Ас|Ад)-(\S+)/, '<span class="nw">$1-$2</span>')}<span class="stars">${st ? "★".repeat(st) + "☆".repeat(3 - st) : lk ? "полная версия" : nx ? "дальше ▶" : "играть"}</span>${lk ? `<i class="chlock">${LOCK}</i>` : ""}</span></button>`;
         }).join("") + `</div></div>`;
     }).join("");
     const ov = sheet(`<h2>Главы</h2>${html}<div class="row"><button class="btn line" id="shClose">Закрыть</button></div>`);

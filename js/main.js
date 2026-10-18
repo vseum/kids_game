@@ -12,6 +12,7 @@ async function play(from, withIntro) {
   if (withIntro) await chIntro();
   for (let k = from; k < CHAPTERS.length; k++) {
     const c = CHAPTERS[k];
+    if (!Pay.canPlay(c.id) && !(await Pay.wall())) { showStart(); return; }
     CUR = c.id; Voice.prefetch(c.lines);
     const misses = await c.fn();
     const st = misses === 0 ? 3 : misses === 1 ? 2 : 1;
@@ -54,8 +55,10 @@ Save.load(); Save.d.items = Save.d.items.filter(i => ITEMS.some(x => x.id === i)
 $("#goVoice").hidden = VOICES.length < 2;
 Voice.load().then(() => { $("#goVoice b").textContent = voiceName(); Me.load(); });
 showHello(); showStart();
+Pay.check().then(() => { $("#goPay").hidden = !Pay.on || Pay.inTG && !Pay.active; }); Pay.afterReturn();
 $("#go").onclick = async () => { Snd.tap(); await askName(); const a = startAction(); jump = null; play(a.k, a.intro); };
 $("#goCh").onclick = async () => { Snd.tap(); await askName(); pickChapter(); };
+$("#goPay").onclick = () => { Snd.tap(); Pay.manage(); };
 $("#goName").onclick = async () => { Snd.tap(); await nameSheet(); showHello(); };
 $("#goVoice").onclick = async () => { Snd.tap(); await voiceSheet(); $("#goVoice b").textContent = voiceName(); };
 /* Домик: на старте — список глав, в игре — пауза */
