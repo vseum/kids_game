@@ -47,8 +47,13 @@ def main():
             m = re.search(r'"%s":\s*\{[^}]*?tr:\s*"(tr_\w+)"' % re.escape(key), src, re.S)
             if m:
                 add(m.group(1), group)
+    alif = ("a_", "l2_", "l3_", "l4_", "l5_")                     # реплики «Алиф-Ба» — отдельным блоком в конце
     for k in lines:
-        add(k, "Финал и общие фразы")
+        if not k.startswith(alif):
+            add(k, "Финал и общие фразы")
+    for k in lines:
+        if k.startswith(alif):
+            add(k, "Алиф-Ба · уровень " + ("1" if k.startswith("a_") else k[1]))
     (ROOT / "zapis.json").write_text(json.dumps(items, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
     print(len(items), "реплик;", sum(i["g"] == "Финал и общие фразы" for i in items), "без главы")
 

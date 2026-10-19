@@ -72,7 +72,7 @@ STRESS = {
 def load_lines():
     """Все реплики: js/lines.js и js/w*_lines.js. В каждом файле объект с репликами — чистый JSON."""
     lines = {}
-    for f in sorted((ROOT / "js").glob("*lines*.js")):
+    for f in sorted((ROOT / "js").glob("*lines*.js")) + sorted((ROOT / "alifba" / "js").glob("*lines*.js")):   # и «Алиф-Ба»
         s = f.read_text(encoding="utf-8")
         start = s.index("{", s.index("window.LINES"))
         lines.update(json.loads(s[start:s.rindex("}") + 1]))
