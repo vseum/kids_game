@@ -36,7 +36,7 @@ addCSS(`
   background: linear-gradient(180deg, #FFF8E6, #F3DEA6); border-top: 5px solid #E2B65A; box-shadow: 0 5px 0 #C9A55A, 0 16px 24px -12px rgba(0,0,0,.5); cursor: pointer; transition: box-shadow .2s; }
 .l4-bin b { font-family: "Amiri", serif; font-weight: 700; color: #1F5B74; line-height: 1.8; padding-bottom: 4px; direction: rtl; white-space: nowrap; }
 .l4-bin small { font-weight: 900; font-size: 15px; color: #8A5A1E; line-height: 1.1; margin-top: -2px; }
-.l4-bin .l4-got { display: flex; gap: 3px; direction: rtl; font-family: "Amiri", serif; font-weight: 700; font-size: 17px; color: #3FA66A; min-height: 18px; line-height: 1; }
+.l4-bin .l4-got { display: flex; gap: 3px; direction: rtl; font-family: "Amiri", serif; font-weight: 700; font-size: 15px; color: #3FA66A; min-height: 18px; line-height: 1.6; margin-top: 2px; }
 .l4-bin.hl { box-shadow: 0 5px 0 #C9A55A, 0 0 0 5px rgba(245,196,81,.95), 0 16px 24px -12px rgba(0,0,0,.5); }
 .l4-bin.no { animation: shake .42s; }
 .l4-bin.yes { animation: l4-jump .45s; }
