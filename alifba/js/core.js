@@ -254,8 +254,8 @@ function catchGame(target, pool, need = 4, kind = "name", timeout = 40000) {
     const { W, H } = size();
     const bw = Math.min(W * 0.34, 150), by = H * 0.86;
     const basket = obj("al-basket", ART.bowl, W / 2, by, bw, bw * 0.6); basket.style.zIndex = 9;
-    let got = 0, misses = 0, fin = false, items = [], bx = W / 2;
-    const mv = ev => { if (fin) return; const p = local(ev); bx = Math.max(bw / 2, Math.min(W - bw / 2, p.x)); put(basket, bx, by); };
+    let got = 0, misses = 0, fin = false, items = [], bx = W / 2, moved = false;
+    const mv = ev => { if (fin) return; moved = true; const p = local(ev); bx = Math.max(bw / 2, Math.min(W - bw / 2, p.x)); put(basket, bx, by); };
     window.addEventListener("pointermove", mv); window.addEventListener("pointerdown", mv);
     const capT = setTimeout(() => end(), timeout);
     function end() { if (fin) return; fin = true; clearInterval(sp); clearTimeout(capT); window.removeEventListener("pointermove", mv); window.removeEventListener("pointerdown", mv); items.forEach(i => i.remove()); fadeOut(basket, 300); res(misses); }
@@ -273,7 +273,7 @@ function catchGame(target, pool, need = 4, kind = "name", timeout = 40000) {
         if (y > by - bw * 0.2 && y < by + 10 && Math.abs(x - bx) < bw * 0.45) {
           e.remove(); items = items.filter(i => i !== e);
           if (e._l === target) { got++; Snd.pop(); capNote.textContent = `Поймано: ${got} из ${need}`; if (got >= need) { celebrate(); setTimeout(end, 400); } }
-          else { misses++; Snd.thud(0.2); AR.say(sndOf(e._l)); }
+          else { if (moved) misses++; Snd.thud(0.2); AR.say(sndOf(e._l)); }   // корзинку не трогали — не ошибка
           return;
         }
         if (y > H + 40) { e.remove(); items = items.filter(i => i !== e); return; }
