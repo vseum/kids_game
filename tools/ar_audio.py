@@ -1,10 +1,14 @@
 """Арабские звуки для «Алиф-Ба»: названия букв, слоги с огласовками, слова-примеры.
 
-    python3 tools/ar_audio.py --list        # только список → alifba/ar_items.json (для суфлёра)
-    python3 tools/ar_audio.py [--missing]   # ВРЕМЕННЫЙ синтез (Piper, ar_JO-kareem) → voice/ar/*.mp3
+    python3 tools/ar_audio.py --list               # только список → alifba/ar_items.json (для суфлёра)
+    <venv>/python tools/ar_audio.py [--missing]    # озвучка → voice/ar/*.mp3 (нужен pip install edge-tts)
 
-Синтез — заглушка: отдельные буквы и слоги он произносит неуверенно. Перед запуском эти звуки
-записывает человек с правильным произношением (суфлёр, раздел «Арабские звуки»); записи заменят файлы с теми же id.
+Откуда звук:
+  1. Слова из Корана (alifba/ar_quran.json) — живая пословная запись чтеца quran.com (audio.qurancdn.com/wbw).
+  2. Остальное — нейроголос Microsoft (edge-tts, по умолчанию ar-SA-ZariyahNeural, --voice меняет).
+     Названия букв и слова он читает хорошо; отдельные слоги (بَ بِ بُ) любой синтез читает как название буквы
+     или глотает гласный — их записывает человек (суфлёр, раздел «Арабские звуки»), записи заменят файлы с теми же id.
+     ⚠ edge-tts — бесплатный конечный пункт браузера Edge; для платной версии тот же голос — через Azure TTS (бесплатно до 0,5 млн знаков/мес).
 """
 import argparse
 import json
@@ -65,21 +69,26 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--missing", action="store_true")
+    ap.add_argument("--voice", default="ar-SA-ZariyahNeural")
     a = ap.parse_args()
     its = items()
     (ROOT / "alifba" / "ar_items.json").write_text(json.dumps(its, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
     print(len(its), "арабских звуков")
     if a.list:
         return
-    model = Path("/tmp/claude-0/-home-user/25c7ba7c-b41d-59a8-b0d4-fbe091a9c0a7/scratchpad/ar/k.onnx")
+    quran = json.loads((ROOT / "alifba" / "ar_quran.json").read_text(encoding="utf-8"))
     OUT.mkdir(parents=True, exist_ok=True)
     for n, it in enumerate(its, 1):
         out = OUT / f"{it['id']}.mp3"
         if a.missing and out.exists():
             continue
-        with tempfile.NamedTemporaryFile(suffix=".wav") as tmp:
-            subprocess.run([sys.executable, "-m", "piper", "-m", str(model), "-f", tmp.name], input=it["t"].encode(), check=True, capture_output=True)
-            subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", tmp.name, "-af", "adelay=120:all=1,apad=pad_dur=0.15,loudnorm=I=-16:TP=-1.5:LRA=11",
+        with tempfile.TemporaryDirectory() as td:
+            raw = Path(td) / "raw.mp3"
+            if it["id"] in quran:
+                subprocess.run(["curl", "-sfL", "-A", "Mozilla/5.0", "-o", str(raw), "https://audio.qurancdn.com/" + quran[it["id"]]["url"]], check=True)
+            else:
+                subprocess.run([sys.executable, "-m", "edge_tts", "--voice", a.voice, "--text", it["t"], "--write-media", str(raw)], check=True, capture_output=True)
+            subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(raw), "-af", "silenceremove=start_periods=1:start_threshold=-45dB,adelay=120:all=1,apad=pad_dur=0.15,loudnorm=I=-16:TP=-1.5:LRA=11",
                             "-ar", "44100", "-ac", "1", "-b:a", "64k", str(out)], check=True)
         if n % 50 == 0:
             print(n, flush=True)
