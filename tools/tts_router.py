@@ -3,7 +3,7 @@
 Ключ — секрет облачной среды типа Bearer для хоста openrouter.ai (прокси подставляет его сам) или переменная
 OPENROUTER_API_KEY. Не в чат и не в git.
 
-    python3 tools/tts_router.py --sample                                  # образцы всех кандидатов → obrazcy/*.mp3
+    python3 tools/tts_router.py --sample [eleven Charon ...]              # образцы готовых голосов → obrazcy/*.mp3
     python3 tools/tts_router.py --lang ru --model M --voice V --dir el_ru [--missing] [id ...]   # реплики игр → voice/<dir>/
     python3 tools/tts_router.py --lang ar --model M --voice V --dir ar [--missing] [id ...]      # арабские звуки «Алиф-Ба»
 
@@ -34,13 +34,16 @@ RU_STYLE = "Тёплый добрый рассказчик для детей 5�
 AR_STYLE = ("A Quran teacher pronouncing Arabic for small children: clear classical Arabic (fusha) with correct makharij, "
             "slow and precise. Read exactly what is written with its vowel marks; a single letter with a vowel mark is "
             "a syllable sound (بُ = 'bu'), never the letter's name.")
-# кандидаты для --sample: (модель, голос, стиль). Голоса ElevenLabs — многоязычные, говорят и по-русски, и по-арабски
+# кандидаты для --sample: (модель, голос, стиль) — только готовые голоса, без клонов. Голоса ElevenLabs многоязычные,
+# у MAI-Voice есть родные русские, Gemini/MiniMax/Grok говорят на многих языках
 CANDIDATES = [
-    ("elevenlabs/eleven-v4", "george", None), ("elevenlabs/eleven-v4", "sarah", None), ("elevenlabs/eleven-v3", "brian", None),
-    ("google/gemini-3.8-flash-tts", "Charon", "style"), ("google/gemini-3.8-flash-tts", "Kore", "style"),
-    ("minimax/speech-2.8-hd", "English_expressive_narrator", None),
+    *[("elevenlabs/eleven-v3", v, None) for v in ("george", "daniel", "brian", "sarah", "alice", "matilda")],
+    *[("google/gemini-3.8-flash-tts", v, "style") for v in ("Charon", "Achird", "Puck", "Kore", "Aoede", "Sulafat")],
+    *[("microsoft/mai-voice-2.1", f"ru-RU-{v}:MAI-Voice-2.1", None) for v in ("Lev", "Grant", "Masha", "Harper")],
+    *[("minimax/speech-2.8-hd", v, None) for v in ("English_expressive_narrator", "English_CaptivatingStoryteller",
+                                                    "English_Gentle-voiced_man", "English_Wiselady")],
+    ("x-ai/grok-voice-tts-1.0", "leo", None), ("x-ai/grok-voice-tts-1.0", "eve", None),
     ("fish-audio/s2.1-pro-free:free", None, "style"),            # бесплатная
-    ("fish-audio/s2.1-pro-free:free", "azat", "style"),          # бесплатная, клон голоса Азата по записям суфлёра
 ]
 SAMPLE_RU = ["intro1", "intro2", "k2", "f_quran"]
 SAMPLE_AR = ["ar_name_ain", "ar_name_qaf", "ar_ba_u", "ar_jim_i", "ar_qaf_i", "ar_ain_a", "ar_sad_u", "ar_hha_i", "ar_ba_sk",
@@ -111,11 +114,13 @@ def texts(lang):
     return {x["id"]: x["t"] for x in ar_items() if x["id"] not in quran}
 
 
-def sample():
-    out_dir = ROOT.parent / "obrazcy"; out_dir.mkdir(exist_ok=True)
+def sample(only=()):
+    out_dir = ROOT / "obrazcy"; out_dir.mkdir(exist_ok=True)
     ru, ar = texts("ru"), texts("ar")
-    for model, voice, st in CANDIDATES:
-        name = (model.split("/")[1] + ("_" + voice if voice else "")).replace(".", "-")
+
+    def one(cand):
+        model, voice, st = cand
+        name = (model.split("/")[1] + ("_" + voice.split(":")[0] if voice else "")).replace(".", "-").replace(":", "-")
         parts = []
         with tempfile.TemporaryDirectory() as td:
             for lang, ids, style in (("ru", SAMPLE_RU, RU_STYLE), ("ar", SAMPLE_AR, AR_STYLE)):
@@ -124,12 +129,18 @@ def sample():
                     if speak((ru if lang == "ru" else ar)[i], model, voice, style if st else None, f, lang):
                         parts.append(f)
             if not parts:
-                continue
+                return None
             lst = Path(td) / "list.txt"
             lst.write_text("".join(f"file '{p}'\n" for p in parts))
             subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", str(lst), "-af", "apad=pad_dur=0.4",
                             "-b:a", "96k", str(out_dir / f"{name}.mp3")], check=True)
         print("образец:", out_dir / f"{name}.mp3", flush=True)
+        return name
+
+    todo = [c for c in CANDIDATES if not only or any(o in f"{c[0]} {c[1]}" for o in only)]
+    with ThreadPoolExecutor(4) as ex:
+        done = [n for n in ex.map(one, todo) if n]
+    print(f"образцов {len(done)} из {len(todo)} → {out_dir}")
 
 
 def main():
@@ -142,7 +153,7 @@ def main():
     ap.add_argument("ids", nargs="*")
     a = ap.parse_args()
     if a.sample:
-        return sample()
+        return sample(a.ids)
     tx = texts(a.lang)
     out_dir = ROOT / "voice" / a.dir; out_dir.mkdir(parents=True, exist_ok=True)
     style = a.instructions or (RU_STYLE if a.lang == "ru" else AR_STYLE)
