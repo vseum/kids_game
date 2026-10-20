@@ -115,6 +115,7 @@ def main():
     ap.add_argument("--list", action="store_true")
     ap.add_argument("--missing", action="store_true")
     ap.add_argument("--voice", default="ar-SA-ZariyahNeural")
+    ap.add_argument("--only", default="", help="регулярка по id: озвучить только эти")
     a = ap.parse_args()
     its = items()
     (ROOT / "alifba" / "ar_items.json").write_text(json.dumps(its, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
@@ -125,7 +126,7 @@ def main():
     OUT.mkdir(parents=True, exist_ok=True)
     for n, it in enumerate(its, 1):
         out = OUT / f"{it['id']}.mp3"
-        if a.missing and out.exists():
+        if a.missing and out.exists() or a.only and not re.search(a.only, it["id"]):
             continue
         with tempfile.TemporaryDirectory() as td:
             raw = Path(td) / "raw.mp3"
