@@ -11,6 +11,10 @@ OPENROUTER_API_KEY. Не в чат и не в git.
 Стиль (--instructions) понимают Gemini TTS, gpt-4o-mini-tts и Fish Audio; остальные его не читают.
 Слова из Корана (alifba/ar_quran.json) не озвучиваем — там голос чтеца.
 --voice azat — клон голоса Азата по его записям из суфлёра (Fish Audio; бесплатная модель: fish-audio/s2.1-pro-free:free).
+
+Лимиты бесплатного OpenRouter (без купленных кредитов): платные модели отвечают 402, у :free — 50 запросов в сутки
+и 20 в минуту. Поэтому образец — 2 запроса на голос (русские реплики одним текстом, арабские другим), после 402
+голос сразу бросаем, на 429 ждём сброса лимита.
 """
 import argparse
 import json
@@ -75,6 +79,10 @@ def azat_ref(lang):
 REFS = {}
 
 
+class NoCredits(Exception):
+    """402: на аккаунте нет кредитов — дальше этой моделью не просим"""
+
+
 def speak(text, model, voice, instructions, out, lang="ru"):
     body = {"model": model, "input": text, "response_format": "mp3"}
     if voice == "azat":   # клон: голос не указываем, даём образец
@@ -98,7 +106,14 @@ def speak(text, model, voice, instructions, out, lang="ru"):
                 return True
         except urllib.error.HTTPError as e:
             msg = e.read().decode(errors="replace")[:300]
-            if e.code in (400, 401, 402, 403, 404):
+            if e.code == 402:
+                raise NoCredits(msg)
+            if e.code == 429:   # лимит в минуту: ждём до сброса (X-RateLimit-Reset — мс от эпохи), не тратя попытки впустую
+                reset = e.headers.get("X-RateLimit-Reset")
+                wait = max(5, min(90, int(reset) / 1000 - time.time() + 1)) if reset and reset.isdigit() else 60
+                print(f"{out.stem}: лимит запросов, жду {wait:.0f} с", flush=True)
+                time.sleep(wait); continue
+            if e.code in (400, 401, 403, 404):
                 print(f"{out.stem}: HTTP {e.code} {msg}", flush=True); return False
         except Exception as e:  # сеть, таймаут — повторяем
             msg = str(e)
@@ -121,13 +136,19 @@ def sample(only=()):
     def one(cand):
         model, voice, st = cand
         name = (model.split("/")[1] + ("_" + voice.split(":")[0] if voice else "")).replace(".", "-").replace(":", "-")
+        if (out_dir / f"{name}.mp3").exists():
+            print("уже есть:", name, flush=True); return name
         parts = []
         with tempfile.TemporaryDirectory() as td:
+            # один запрос на язык: реплики подряд, каждая с новой строки — модель делает между ними паузу
             for lang, ids, style in (("ru", SAMPLE_RU, RU_STYLE), ("ar", SAMPLE_AR, AR_STYLE)):
-                for i in ids:
-                    f = Path(td) / f"{len(parts):03d}.mp3"
-                    if speak((ru if lang == "ru" else ar)[i], model, voice, style if st else None, f, lang):
+                tx = ru if lang == "ru" else ar
+                f = Path(td) / f"{lang}.mp3"
+                try:
+                    if speak("\n".join(tx[i] for i in ids), model, voice, style if st else None, f, lang):
                         parts.append(f)
+                except NoCredits:
+                    print(f"{name}: нет кредитов (402) — пропускаю", flush=True); return None
             if not parts:
                 return None
             lst = Path(td) / "list.txt"
@@ -138,8 +159,10 @@ def sample(only=()):
         return name
 
     todo = [c for c in CANDIDATES if not only or any(o in f"{c[0]} {c[1]}" for o in only)]
-    with ThreadPoolExecutor(4) as ex:
-        done = [n for n in ex.map(one, todo) if n]
+    free = [c for c in todo if c[0].endswith(":free")]
+    with ThreadPoolExecutor(4) as ex:   # бесплатные — по одному, чтобы не упираться в 20 запросов в минуту
+        done = [n for n in ex.map(one, [c for c in todo if c not in free]) if n]
+    done += [n for n in map(one, free) if n]
     print(f"образцов {len(done)} из {len(todo)} → {out_dir}")
 
 
@@ -158,8 +181,11 @@ def main():
     out_dir = ROOT / "voice" / a.dir; out_dir.mkdir(parents=True, exist_ok=True)
     style = a.instructions or (RU_STYLE if a.lang == "ru" else AR_STYLE)
     todo = [i for i in (a.ids or tx) if tx.get(i) and not (a.missing and (out_dir / f"{i}.mp3").exists())]
-    with ThreadPoolExecutor(6) as ex:
-        ok = sum(ex.map(lambda i: speak(tx[i], a.model, a.voice, style, out_dir / f"{i}.mp3", a.lang), todo))
+    try:
+        with ThreadPoolExecutor(1 if a.model.endswith(":free") else 6) as ex:
+            ok = sum(ex.map(lambda i: speak(tx[i], a.model, a.voice, style, out_dir / f"{i}.mp3", a.lang), todo))
+    except NoCredits as e:
+        sys.exit(f"нет кредитов OpenRouter (402), остановлено: {e}")
     have = sorted(p.stem for p in out_dir.glob("*.mp3"))
     (out_dir / "manifest.json").write_text(json.dumps(have, ensure_ascii=False, indent=0) + "\n", encoding="utf-8")
     print(f"озвучено {ok} из {len(todo)}; в папке {len(have)}")
