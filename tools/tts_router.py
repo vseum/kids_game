@@ -1,6 +1,7 @@
 """Озвучка через OpenRouter (/api/v1/audio/speech): ElevenLabs, Gemini TTS, MiniMax, MAI-Voice, Fish Audio — одним ключом.
 
-Ключ — переменная окружения OPENROUTER_API_KEY (настройки облачной среды или Timeweb, не в чат и не в git).
+Ключ — секрет облачной среды типа Bearer для хоста openrouter.ai (прокси подставляет его сам) или переменная
+OPENROUTER_API_KEY. Не в чат и не в git.
 
     python3 tools/tts_router.py --sample                                  # образцы всех кандидатов → obrazcy/*.mp3
     python3 tools/tts_router.py --lang ru --model M --voice V --dir el_ru [--missing] [id ...]   # реплики игр → voice/<dir>/
@@ -80,8 +81,10 @@ def speak(text, model, voice, instructions, out, lang="ru"):
         body["voice"] = voice
     if instructions:
         body["instructions"] = instructions
-    req = urllib.request.Request(URL, data=json.dumps(body).encode(), method="POST", headers={
-        "Authorization": "Bearer " + os.environ["OPENROUTER_API_KEY"], "Content-Type": "application/json"})
+    head = {"Content-Type": "application/json"}
+    if os.environ.get("OPENROUTER_API_KEY"):   # иначе ключ подставляет прокси облачной среды (секрет Bearer для openrouter.ai)
+        head["Authorization"] = "Bearer " + os.environ["OPENROUTER_API_KEY"]
+    req = urllib.request.Request(URL, data=json.dumps(body).encode(), method="POST", headers=head)
     for k in range(4):
         try:
             with urllib.request.urlopen(req, timeout=120) as r, tempfile.NamedTemporaryFile(suffix=".mp3") as tmp:
@@ -138,8 +141,6 @@ def main():
     ap.add_argument("--missing", action="store_true")
     ap.add_argument("ids", nargs="*")
     a = ap.parse_args()
-    if not os.environ.get("OPENROUTER_API_KEY"):
-        sys.exit("нет OPENROUTER_API_KEY в окружении")
     if a.sample:
         return sample()
     tx = texts(a.lang)
