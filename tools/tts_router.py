@@ -8,7 +8,8 @@ OPENROUTER_API_KEY. Не в чат и не в git.
     python3 tools/tts_router.py --lang ar --model M --voice V --dir ar [--missing] [id ...]      # арабские звуки «Алиф-Ба»
 
 Модели и голоса: curl -s "https://openrouter.ai/api/v1/models?output_modalities=speech"
-Стиль (--instructions) понимают Gemini TTS, gpt-4o-mini-tts и Fish Audio; остальные его не читают.
+Стиль (--instructions) понимают Gemini TTS и gpt-4o-mini-tts. Fish Audio его не понимает и зачитывает вслух — ему не шлём.
+Голоса ElevenLabs/MiniMax английские: по-русски с акцентом. Родные русские — MAI-Voice (платно) и библиотека Fish (бесплатно).
 Слова из Корана (alifba/ar_quran.json) не озвучиваем — там голос чтеца.
 --voice azat — клон голоса Азата по его записям из суфлёра (Fish Audio; бесплатная модель: fish-audio/s2.1-pro-free:free).
 
@@ -40,6 +41,11 @@ AR_STYLE = ("A Quran teacher pronouncing Arabic for small children: clear classi
             "a syllable sound (بُ = 'bu'), never the letter's name.")
 # кандидаты для --sample: (модель, голос, стиль) — только готовые голоса, без клонов. Голоса ElevenLabs многоязычные,
 # у MAI-Voice есть родные русские, Gemini/MiniMax/Grok говорят на многих языках
+FISH_RU = {"zh-spokoyny": "2a1036d645634680b3cc69aeeb60375b", "zh-teply": "f14e1f9fb32d4dbd8cd5b40a0fef86a5",
+           "zh-myagky": "e64409e787324864bdf9e5c1b6acd97a", "zh-vyrazitelny": "aa615eaff73f417e91cfbb4ea0e42df8",
+           "zh-molodoy": "d567e990d9ad433892ed15ecfd70ce54", "m-adam": "4177b0a68e4e46879c8e228ae388934f",
+           "m-chyotky": "7312c38557eb4fb384e3874e8e9cea67", "m-rasskazchik": "48ec28a45588422b977a86460c11977f",
+           "m-molodoy": "c962ed46edfd419abc530d1e33a7435f", "m-glubokiy": "fa3e3b7d3c2a44d88d9f018bc45db1ce"}
 CANDIDATES = [
     *[("elevenlabs/eleven-v3", v, None) for v in ("george", "daniel", "brian", "sarah", "alice", "matilda")],
     *[("google/gemini-3.8-flash-tts", v, "style") for v in ("Charon", "Achird", "Puck", "Kore", "Aoede", "Sulafat")],
@@ -47,7 +53,10 @@ CANDIDATES = [
     *[("minimax/speech-2.8-hd", v, None) for v in ("English_expressive_narrator", "English_CaptivatingStoryteller",
                                                     "English_Gentle-voiced_man", "English_Wiselady")],
     ("x-ai/grok-voice-tts-1.0", "leo", None), ("x-ai/grok-voice-tts-1.0", "eve", None),
-    ("fish-audio/s2.1-pro-free:free", None, "style"),            # бесплатная
+    ("fish-audio/s2.1-pro-free:free", None, None),               # бесплатная
+    # бесплатная Fish с родными русскими голосами-рассказчиками из библиотеки fish.audio (voice = id модели голоса;
+    # список: https://api.fish.audio/model?language=ru&sort_by=task_count). Голоса знаменитостей не берём.
+    *[("fish-audio/s2.1-pro-free:free", v, None, n) for n, v in FISH_RU.items()],
 ]
 SAMPLE_RU = ["intro1", "intro2", "k2", "f_quran"]
 SAMPLE_AR = ["ar_name_ain", "ar_name_qaf", "ar_ba_u", "ar_jim_i", "ar_qaf_i", "ar_ain_a", "ar_sad_u", "ar_hha_i", "ar_ba_sk",
@@ -90,7 +99,7 @@ def speak(text, model, voice, instructions, out, lang="ru"):
         body["input_references"] = [{"type": "input_audio", "input_audio": {"data": ref["data"]}}, {"type": "text", "text": ref["text"]}]
     elif voice:
         body["voice"] = voice
-    if instructions:
+    if instructions and not model.startswith("fish-audio/"):   # Fish читает инструкцию вслух как текст
         body["instructions"] = instructions
     head = {"Content-Type": "application/json"}
     if os.environ.get("OPENROUTER_API_KEY"):   # иначе ключ подставляет прокси облачной среды (секрет Bearer для openrouter.ai)
@@ -134,8 +143,8 @@ def sample(only=()):
     ru, ar = texts("ru"), texts("ar")
 
     def one(cand):
-        model, voice, st = cand
-        name = (model.split("/")[1] + ("_" + voice.split(":")[0] if voice else "")).replace(".", "-").replace(":", "-")
+        model, voice, st, *label = cand
+        name = (model.split("/")[1] + ("_" + (label[0] if label else voice.split(":")[0]) if voice else "")).replace(".", "-").replace(":", "-")
         if (out_dir / f"{name}.mp3").exists():
             print("уже есть:", name, flush=True); return name
         parts = []
@@ -158,7 +167,7 @@ def sample(only=()):
         print("образец:", out_dir / f"{name}.mp3", flush=True)
         return name
 
-    todo = [c for c in CANDIDATES if not only or any(o in f"{c[0]} {c[1]}" for o in only)]
+    todo = [c for c in CANDIDATES if not only or any(o in " ".join(map(str, c)) for o in only)]
     free = [c for c in todo if c[0].endswith(":free")]
     with ThreadPoolExecutor(4) as ex:   # бесплатные — по одному, чтобы не упираться в 20 запросов в минуту
         done = [n for n in ex.map(one, [c for c in todo if c not in free]) if n]
