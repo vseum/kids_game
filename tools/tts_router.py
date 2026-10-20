@@ -9,6 +9,7 @@
 Модели и голоса: curl -s "https://openrouter.ai/api/v1/models?output_modalities=speech"
 Стиль (--instructions) понимают Gemini TTS, gpt-4o-mini-tts и Fish Audio; остальные его не читают.
 Слова из Корана (alifba/ar_quran.json) не озвучиваем — там голос чтеца.
+--voice azat — клон голоса Азата по его записям из суфлёра (Fish Audio; бесплатная модель: fish-audio/s2.1-pro-free:free).
 """
 import argparse
 import json
@@ -36,16 +37,46 @@ AR_STYLE = ("A Quran teacher pronouncing Arabic for small children: clear classi
 CANDIDATES = [
     ("elevenlabs/eleven-v4", "george", None), ("elevenlabs/eleven-v4", "sarah", None), ("elevenlabs/eleven-v3", "brian", None),
     ("google/gemini-3.8-flash-tts", "Charon", "style"), ("google/gemini-3.8-flash-tts", "Kore", "style"),
-    ("minimax/speech-2.8-hd", "English_expressive_narrator", None), ("fish-audio/s2.1-pro", None, "style"),
+    ("minimax/speech-2.8-hd", "English_expressive_narrator", None),
+    ("fish-audio/s2.1-pro-free:free", None, "style"),            # бесплатная
+    ("fish-audio/s2.1-pro-free:free", "azat", "style"),          # бесплатная, клон голоса Азата по записям суфлёра
 ]
 SAMPLE_RU = ["intro1", "intro2", "k2", "f_quran"]
 SAMPLE_AR = ["ar_name_ain", "ar_name_qaf", "ar_ba_u", "ar_jim_i", "ar_qaf_i", "ar_ain_a", "ar_sad_u", "ar_hha_i", "ar_ba_sk",
              "ar_ba_an", "ar_ba_aa", "ar_w_shin", "ar_l5_ashshams"]
 
 
-def speak(text, model, voice, instructions, out):
+def azat_ref(lang):
+    """Образец голоса Азата для клонирования: его записи из суфлёра (ветка data репозитория jarvis-azata) одним WAV + текст.
+    Русский — реплики игры, арабский — названия букв и слова."""
+    jarvis = ROOT.parent / "jarvis-azata"
+    subprocess.run(["git", "-C", str(jarvis), "fetch", "-q", "origin", "data:refs/remotes/origin/data"], check=False)
+    names = subprocess.run(["git", "-C", str(jarvis), "ls-tree", "--name-only", "origin/data", "igra/rec/"], capture_output=True, text=True).stdout.split()
+    want = [n for n in names if n.endswith(".wav") and (Path(n).stem.startswith("ar_") == (lang == "ar"))][:12]
+    tx = texts(lang) if lang == "ar" else {x["id"]: x["t"] for x in json.loads((ROOT / "zapis.json").read_text(encoding="utf-8"))}
+    with tempfile.TemporaryDirectory() as td:
+        parts = []
+        for n in want:
+            f = Path(td) / Path(n).name
+            f.write_bytes(subprocess.run(["git", "-C", str(jarvis), "show", f"origin/data:{n}"], capture_output=True).stdout)
+            parts.append(f)
+        lst = Path(td) / "l.txt"; lst.write_text("".join(f"file '{p}'\n" for p in parts))
+        out = Path(td) / "ref.wav"
+        subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", str(lst), "-af", "apad=pad_dur=0.3", "-ar", "24000", "-ac", "1", str(out)], check=True)
+        import base64
+        return {"data": "data:audio/wav;base64," + base64.b64encode(out.read_bytes()).decode(),
+                "text": " ".join(tx.get(Path(n).stem, "") for n in want)}
+
+
+REFS = {}
+
+
+def speak(text, model, voice, instructions, out, lang="ru"):
     body = {"model": model, "input": text, "response_format": "mp3"}
-    if voice:
+    if voice == "azat":   # клон: голос не указываем, даём образец
+        ref = REFS.setdefault(lang, azat_ref(lang))
+        body["input_references"] = [{"type": "input_audio", "input_audio": {"data": ref["data"]}}, {"type": "text", "text": ref["text"]}]
+    elif voice:
         body["voice"] = voice
     if instructions:
         body["instructions"] = instructions
@@ -87,7 +118,7 @@ def sample():
             for lang, ids, style in (("ru", SAMPLE_RU, RU_STYLE), ("ar", SAMPLE_AR, AR_STYLE)):
                 for i in ids:
                     f = Path(td) / f"{len(parts):03d}.mp3"
-                    if speak((ru if lang == "ru" else ar)[i], model, voice, style if st else None, f):
+                    if speak((ru if lang == "ru" else ar)[i], model, voice, style if st else None, f, lang):
                         parts.append(f)
             if not parts:
                 continue
@@ -116,7 +147,7 @@ def main():
     style = a.instructions or (RU_STYLE if a.lang == "ru" else AR_STYLE)
     todo = [i for i in (a.ids or tx) if tx.get(i) and not (a.missing and (out_dir / f"{i}.mp3").exists())]
     with ThreadPoolExecutor(6) as ex:
-        ok = sum(ex.map(lambda i: speak(tx[i], a.model, a.voice, style, out_dir / f"{i}.mp3"), todo))
+        ok = sum(ex.map(lambda i: speak(tx[i], a.model, a.voice, style, out_dir / f"{i}.mp3", a.lang), todo))
     have = sorted(p.stem for p in out_dir.glob("*.mp3"))
     (out_dir / "manifest.json").write_text(json.dumps(have, ensure_ascii=False, indent=0) + "\n", encoding="utf-8")
     print(f"озвучено {ok} из {len(todo)}; в папке {len(have)}")
