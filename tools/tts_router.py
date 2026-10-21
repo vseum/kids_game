@@ -219,6 +219,36 @@ def split_batch(wav, lines, asr):
     return out
 
 
+def _audio(path):
+    import numpy as np
+    raw = subprocess.run(["ffmpeg", "-v", "error", "-i", str(path), "-f", "s16le", "-ac", "1", "-ar", "16000", "-"], capture_output=True, check=True).stdout
+    return np.frombuffer(raw, np.int16).astype(np.float32) / 32768
+
+
+def check_piece(path, text, asr):
+    """Нарезанная реплика целиком и без чужого: распознаём её и сверяем с текстом. Лишняя речь по краям (хвост соседа)
+    или потерянное слово на краю — брак; ошибки распознавания внутри (имена, арабские слова) — не брак."""
+    got = [_tok(t) for s in asr.transcribe(_audio(path), language="ru")[0] for t in re.findall(r"[а-яёa-z0-9]+", s.text.lower())]
+    exp = words(text)
+    if len(exp) <= 2:   # одно-два слова распознавание без контекста путает, а резать там нечего
+        return True
+    if not got:
+        return False
+    sm = difflib.SequenceMatcher(None, exp, got, autojunk=False)
+    bl = [b for b in sm.get_matching_blocks() if b.size]
+    if not bl or sm.ratio() < 0.6:
+        return False
+    head_exp, head_got = exp[:bl[0].a], got[:bl[0].b]
+    tail_exp, tail_got = exp[bl[-1].a + bl[-1].size:], got[bl[-1].b + bl[-1].size:]
+    # на краю распознано что-то, чего нет в тексте, а текстовое слово там нашлось — это чужая речь
+    if (head_got and not head_exp) or (tail_got and not tail_exp):
+        return False
+    # на краю не хватает слова (больше одной-двух букв) и вместо него ничего не распознано — потеряно при нарезке
+    if (len("".join(head_exp)) >= 4 and not head_got) or (len("".join(tail_exp)) >= 4 and not tail_got):
+        return False
+    return True
+
+
 def free_left():
     head = {"Authorization": "Bearer " + os.environ["OPENROUTER_API_KEY"]} if os.environ.get("OPENROUTER_API_KEY") else {}
     with urllib.request.urlopen(urllib.request.Request("https://openrouter.ai/api/v1/key", headers=head), timeout=30) as r:
@@ -229,7 +259,7 @@ def batch(tx, ids, model, voice, out_dir, budget, chars=1500):
     """Реплики пачками по ~chars символов одним запросом; не нашедшиеся в записи — в следующие пачки, помельче"""
     from faster_whisper import WhisperModel
     asr = WhisperModel("medium", device="cpu", compute_type="int8")
-    todo, done, used, size = list(ids), 0, 0, chars
+    todo, done, used, size, tries = list(ids), 0, 0, chars, {}
     cache = ROOT / "tools" / ".cache" / "batch"; cache.mkdir(parents=True, exist_ok=True)
     while todo and used < budget:
         if model.endswith(":free") and free_left() <= 0:
@@ -245,8 +275,15 @@ def batch(tx, ids, model, voice, out_dir, budget, chars=1500):
         spans = split_batch(raw, lines, asr)
         miss = [i for i, sp in zip(group, spans) if not sp]
         for i, sp in zip(group, spans):
-            if sp:
-                finish(raw, out_dir / f"{i}.mp3", *sp); done += 1
+            if not sp:
+                continue
+            f = out_dir / f"{i}.mp3"
+            finish(raw, f, *sp)
+            tries[i] = tries.get(i, 0) + 1
+            if check_piece(f, tx[i], asr) or tries[i] >= 3:   # на третий раз берём как есть: значит, путается распознавание
+                done += 1
+            else:
+                f.unlink(); miss.append(i)
         todo.extend(miss)
         # много потерь — пачки помельче, всё нашлось — снова крупнее
         size = max(300, size // 2) if len(miss) * 3 > len(group) else min(chars, size * 2) if not miss else size
@@ -301,6 +338,7 @@ def main():
     ap.add_argument("--missing", action="store_true")
     ap.add_argument("--batch", action="store_true", help="пачками по ~1500 символов одним запросом")
     ap.add_argument("--mix", action="store_true", help="озвучка «Смешанная»: --batch --missing рассказчиком Fish без арабских фраз")
+    ap.add_argument("--recheck", action="store_true", help="проверить готовые реплики распознаванием, брак удалить")
     ap.add_argument("--budget", type=int, default=45, help="--batch: не больше стольких запросов за запуск")
     ap.add_argument("ids", nargs="*")
     a = ap.parse_args()
@@ -314,6 +352,14 @@ def main():
     out_dir = ROOT / "voice" / a.dir; out_dir.mkdir(parents=True, exist_ok=True)
     style = a.instructions or (RU_STYLE if a.lang == "ru" else AR_STYLE)
     todo = [i for i in (a.ids or tx) if tx.get(i) and not (a.missing and (out_dir / f"{i}.mp3").exists())]
+    if a.recheck:
+        from faster_whisper import WhisperModel
+        asr = WhisperModel("medium", device="cpu", compute_type="int8")
+        bad = [i for i in (a.ids or tx) if (out_dir / f"{i}.mp3").exists() and not check_piece(out_dir / f"{i}.mp3", tx[i], asr)]
+        for i in bad:
+            (out_dir / f"{i}.mp3").unlink()
+        a.batch, todo = False, []
+        print(f"брак {len(bad)}: {' '.join(bad)}")
     if a.batch:
         try:
             ok, left = batch(tx, todo, a.model, a.voice, out_dir, a.budget)
