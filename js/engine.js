@@ -151,9 +151,12 @@ document.addEventListener("visibilitychange", () => {
 /* Голоса озвучки: файлы лежат в voice/<id>/ */
 const VOICES = [   /* новый голос — строка сюда и папка voice/<id>/; при двух и больше голосах на старте появится выбор */
   { id: "eugene", name: "Евгений", g: "мужской" },
-  { id: "azat", name: "Азат", g: "мужской" }
+  { id: "azat", name: "Азат", g: "мужской" },
+  /* русский — рассказчик (Fish Audio), реплики с арабскими фразами и имена — голосом Евгения */
+  { id: "mix", name: "Смешанная", g: "мужской", names: "eugene", demo: "intro2" }
 ];
 const BASE_VOICE = "eugene";   // озвучен полностью: им договариваются реплики, которых у выбранного голоса ещё нет
+const namesOf = sp => (VOICES.find(v => v.id === sp) || {}).names || sp;   // чьим голосом звучат имена детей
 const Voice = {
   on: true, sp: VOICES[0].id, have: new Set(), base: new Set(), cache: new Map(), cur: null, ru: null, seq: 0, qari: null, ready: null,
   load() { return this.ready || (this.ready = this.init()); },
@@ -227,7 +230,7 @@ const Voice = {
       cap.classList.add("talk");
       const nm = named ? Me.clip() : null, from = this.src(id);
       if (from && Snd.ac) {
-        Promise.all([nm ? this.buffer(this.sp, "names/" + nm).catch(() => null) : null, this.buffer(from, id)]).then(([nb, b]) => {
+        Promise.all([nm ? this.buffer(namesOf(this.sp), "names/" + nm).catch(() => null) : null, this.buffer(from, id)]).then(([nb, b]) => {
           if (my !== this.seq) return fin();      // пока грузилось, реплику уже отменили
           if (!nb) return this.play(b, fin);
           this.play(nb, () => my === this.seq ? setTimeout(() => my === this.seq ? this.play(b, fin) : fin(), 120) : fin());
@@ -263,7 +266,7 @@ const Me = {
     const get = s => fetch(ROOT + "voice/" + s + "/names.json").then(r => r.ok ? r.json() : null).catch(() => null);
     if (this.vsp !== Voice.sp) {
       this.vsp = Voice.sp; const sp = Voice.sp;
-      this.voicedReady = get(sp).then(a => { if (this.vsp === sp) this.voiced = new Map((a || []).map(([n, id]) => [normName(n), id])); });
+      this.voicedReady = get(namesOf(sp)).then(a => { if (this.vsp === sp) this.voiced = new Map((a || []).map(([n, id]) => [normName(n), id])); });
     }
     return this.list || (this.list = get(BASE_VOICE).then(a => a || []).then(a => { this.idx = new Map(a.map(([n, id]) => [normName(n), id])); return a; }));
   },
@@ -285,7 +288,7 @@ const Me = {
   async hello(n) {
     const id = this.clip(n); if (!id || !Voice.on || !Snd.ac) return;
     Voice.stop(); const my = Voice.seq;
-    try { const b = await Voice.buffer(Voice.sp, "names/" + id); if (my === Voice.seq) Voice.play(b); } catch (e) {}
+    try { const b = await Voice.buffer(namesOf(Voice.sp), "names/" + id); if (my === Voice.seq) Voice.play(b); } catch (e) {}
   }
 };
 /* Обращение в начале реплики: «Амина! » */
@@ -589,7 +592,7 @@ function voiceSheet() {
     const ov = sheet(`<h2>Голос</h2><div class="vlist">${rows}</div><p class="small">Нажми ▶, чтобы послушать</p>`).withX(() => { Voice.stop(); ov.close(); res(); });
     ov.querySelectorAll(".vrow").forEach(r => {
       const id = r.dataset.id;
-      r.querySelector(".vplay").onclick = () => { Snd.tap(); unlockAudio(); Voice.preview(id, "intro1"); };
+      r.querySelector(".vplay").onclick = () => { Snd.tap(); unlockAudio(); Voice.preview(id, VOICES.find(v => v.id === id).demo || "intro1"); };
       r.querySelector(".vpick").onclick = async () => {
         Snd.tap(); Voice.stop(); await Voice.setSpeaker(id);
         ov.querySelectorAll(".vrow").forEach(x => { const on = x.dataset.id === id; x.classList.toggle("on", on); x.querySelector(".vpick").textContent = on ? "Выбран" : "Выбрать"; });

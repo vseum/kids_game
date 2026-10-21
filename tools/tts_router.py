@@ -6,6 +6,10 @@ OPENROUTER_API_KEY. Не в чат и не в git.
     python3 tools/tts_router.py --sample [eleven Charon ...]              # образцы готовых голосов → obrazcy/*.mp3
     python3 tools/tts_router.py --lang ru --model M --voice V --dir el_ru [--missing] [id ...]   # реплики игр → voice/<dir>/
     python3 tools/tts_router.py --lang ar --model M --voice V --dir ar [--missing] [id ...]      # арабские звуки «Алиф-Ба»
+    python3 tools/tts_router.py --mix [--budget 45]         # озвучка «Смешанная» → voice/mix/ (см. MIX ниже)
+
+--batch: много реплик одним запросом (бесплатный лимит — 50 запросов в сутки), запись режется по паузам между репликами
+по распознаванию речи (pip install faster-whisper); реплика, которую не удалось уверенно найти, идёт в следующую пачку.
 
 Модели и голоса: curl -s "https://openrouter.ai/api/v1/models?output_modalities=speech"
 Стиль (--instructions) понимают Gemini TTS и gpt-4o-mini-tts. Fish Audio его не понимает и зачитывает вслух — ему не шлём.
@@ -18,8 +22,10 @@ OPENROUTER_API_KEY. Не в чат и не в git.
 голос сразу бросаем, на 429 ждём сброса лимита.
 """
 import argparse
+import difflib
 import json
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -86,13 +92,27 @@ def azat_ref(lang):
 
 
 REFS = {}
+FINISH = ("silenceremove=start_periods=1:start_threshold=-50dB,areverse,silenceremove=start_periods=1:start_threshold=-50dB,areverse,"
+          "adelay=100:all=1,apad=pad_dur=0.12,loudnorm=I=-16:TP=-1.5:LRA=11")
+
+# «Смешанная» озвучка: русский — рассказчик бесплатной Fish, а реплики с арабскими фразами (их Fish говорит плохо) остаются
+# голосом Евгения — в voice/mix/ их просто нет, игра договаривает их основным голосом
+MIX = ("fish-audio/s2.1-pro-free:free", "48ec28a45588422b977a86460c11977f", "mix")
+AR_PHRASE = re.compile(r"ас-сал[яа]му|алейкум|бисмил|альхамдулил|субханал|акбар|иляха|илля|а'узу|хасбуна|расулю|мухаммадур|"
+                       r"ин ша|инша|маша|саллалла|ﷺ|ниъмаль|вакиль|\bамин\b", re.I)
+
+
+def finish(src, out, start=None, end=None):
+    """Срез записи [start, end] → обрезка тишины по краям, громкость, mp3 для игры"""
+    cut = (["-ss", f"{start:.3f}"] if start else []) + (["-to", f"{end:.3f}"] if end else [])
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(src), *cut, "-af", FINISH, "-ar", "44100", "-ac", "1", "-b:a", "64k", str(out)], check=True)
 
 
 class NoCredits(Exception):
     """402: на аккаунте нет кредитов — дальше этой моделью не просим"""
 
 
-def speak(text, model, voice, instructions, out, lang="ru"):
+def speak(text, model, voice, instructions, out, lang="ru", raw=False):
     body = {"model": model, "input": text, "response_format": "mp3"}
     if voice == "azat":   # клон: голос не указываем, даём образец
         ref = REFS.setdefault(lang, azat_ref(lang))
@@ -107,11 +127,12 @@ def speak(text, model, voice, instructions, out, lang="ru"):
     req = urllib.request.Request(URL, data=json.dumps(body).encode(), method="POST", headers=head)
     for k in range(4):
         try:
-            with urllib.request.urlopen(req, timeout=120) as r, tempfile.NamedTemporaryFile(suffix=".mp3") as tmp:
-                tmp.write(r.read()); tmp.flush()
-                subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", tmp.name, "-af",
-                                "silenceremove=start_periods=1:start_threshold=-50dB,areverse,silenceremove=start_periods=1:start_threshold=-50dB,areverse,"
-                                "adelay=100:all=1,apad=pad_dur=0.12,loudnorm=I=-16:TP=-1.5:LRA=11", "-ar", "44100", "-ac", "1", "-b:a", "64k", str(out)], check=True)
+            with urllib.request.urlopen(req, timeout=300) as r, tempfile.NamedTemporaryFile(suffix=".mp3") as tmp:
+                data = r.read()
+                if raw:
+                    Path(out).write_bytes(data); return True
+                tmp.write(data); tmp.flush()
+                finish(tmp.name, out)
                 return True
         except urllib.error.HTTPError as e:
             msg = e.read().decode(errors="replace")[:300]
@@ -136,6 +157,98 @@ def texts(lang):
         return {i: prepare(t, stress=False) for i, t in load_lines().items()}
     quran = json.loads((ROOT / "alifba" / "ar_quran.json").read_text(encoding="utf-8"))
     return {x["id"]: x["t"] for x in ar_items() if x["id"] not in quran}
+
+
+def _tok(w):
+    """Слово для сверки с распознанным: распознавание путает безударные о/а, е/и, двойные буквы"""
+    w = w.lower().replace("ё", "е").replace("ъ", "").replace("ь", "")
+    w = w.translate(str.maketrans("оэы", "аеи"))
+    return re.sub(r"(.)\1+", r"\1", w)
+
+
+def words(t):
+    return [_tok(w) for w in re.findall(r"[а-яёa-z0-9]+", t.lower())]
+
+
+def split_batch(wav, lines, asr):
+    """Где в записи пачки каждая реплика: [(начало, конец) или None]. Слова распознанной речи сверяем с текстом,
+    границу реплик ставим посередине самой длинной паузы между последним словом одной и первым словом следующей."""
+    import numpy as np
+    a = np.frombuffer(subprocess.run(["ffmpeg", "-v", "error", "-i", str(wav), "-f", "s16le", "-ac", "1", "-ar", "16000", "-"],
+                                     capture_output=True, check=True).stdout, np.int16).astype(np.float32) / 32768
+    segs, _ = asr.transcribe(a, language="ru", word_timestamps=True, condition_on_previous_text=False)
+    rec = [(_tok(t), w.start, w.end) for s in segs for w in s.words for t in re.findall(r"[а-яёa-z0-9]+", w.word.lower())]
+    exp = [(t, i) for i, l in enumerate(lines) for t in words(l)]
+    sm = difflib.SequenceMatcher(None, [e[0] for e in exp], [r[0] for r in rec], autojunk=False)
+    hit = {}                                     # номер слова текста → номер распознанного
+    for b in sm.get_matching_blocks():
+        for k in range(b.size):
+            hit[b.a + k] = b.b + k
+    pos = [[j for j, e in enumerate(exp) if e[1] == i] for i in range(len(lines))]
+    span = []
+    for i, ps in enumerate(pos):
+        got = [p for p in ps if p in hit]
+        # первое и последнее слово реплики должны найтись (иначе граница неточна), и почти все слова — тоже
+        ok = ps and ps[0] in hit and ps[-1] in hit and len(got) >= 0.8 * len(ps)
+        span.append((rec[hit[ps[0]]][1], rec[hit[ps[-1]]][2]) if ok else None)
+    # энергия кадрами по 10 мс, чтобы резать в тишине, а не по неточным меткам слов
+    fr = 160; e = np.sqrt(np.convolve(a ** 2, np.ones(fr) / fr, "same")[::fr] + 1e-12)
+    quiet = e < max(0.003, np.percentile(e, 20) * 1.5)
+
+    def gap(t0, t1):                             # середина самой длинной тишины в [t0, t1]
+        i0, i1 = max(0, int(t0 * 100)), min(len(quiet), int(t1 * 100) + 1)
+        best, run, bi = 0, 0, None
+        for k in range(i0, i1):
+            run = run + 1 if quiet[k] else 0
+            if run > best: best, bi = run, k
+        return ((bi - best / 2) / 100, best) if bi is not None else (None, 0)
+
+    out, last = [None] * len(lines), len(a) / 16000
+    for i, sp in enumerate(span):
+        if not sp:
+            continue
+        # с соседом, который нашёлся, режем в паузе между ними; иначе — в паузе у края своей реплики
+        st, n = (0.0, 99) if i == 0 else gap(span[i - 1][1] - 0.2 if span[i - 1] else sp[0] - 0.8, sp[0] + 0.2)
+        en, m = (last, 99) if i == len(lines) - 1 else gap(sp[1] - 0.2, span[i + 1][0] + 0.2 if span[i + 1] else sp[1] + 0.8)
+        if st is not None and en is not None and n >= 8 and m >= 8 and en - st > 0.4:   # паузы хотя бы 80 мс с обеих сторон
+            out[i] = (st, en)
+    return out
+
+
+def free_left():
+    head = {"Authorization": "Bearer " + os.environ["OPENROUTER_API_KEY"]} if os.environ.get("OPENROUTER_API_KEY") else {}
+    with urllib.request.urlopen(urllib.request.Request("https://openrouter.ai/api/v1/key", headers=head), timeout=30) as r:
+        return json.load(r)["data"]["free_model_daily_requests"]["remaining"]
+
+
+def batch(tx, ids, model, voice, out_dir, budget, chars=1500):
+    """Реплики пачками по ~chars символов одним запросом; не нашедшиеся в записи — в следующие пачки, помельче"""
+    from faster_whisper import WhisperModel
+    asr = WhisperModel("medium", device="cpu", compute_type="int8")
+    todo, done, used, size = list(ids), 0, 0, chars
+    cache = ROOT / "tools" / ".cache" / "batch"; cache.mkdir(parents=True, exist_ok=True)
+    while todo and used < budget:
+        if model.endswith(":free") and free_left() <= 0:
+            print("бесплатные запросы на сегодня кончились"); break
+        group, n = [], 0
+        while todo and (not group or n + len(tx[todo[0]]) <= size):
+            i = todo.pop(0); group.append(i); n += len(tx[i])
+        lines = [t if re.search(r"[.!?…]$", t) else t + "." for t in (tx[i] for i in group)]
+        raw = cache / f"{group[0]}.mp3"
+        used += 1
+        if not speak("\n".join(lines), model, voice, None, raw, raw=True):
+            todo.extend(group); continue
+        spans = split_batch(raw, lines, asr)
+        miss = [i for i, sp in zip(group, spans) if not sp]
+        for i, sp in zip(group, spans):
+            if sp:
+                finish(raw, out_dir / f"{i}.mp3", *sp); done += 1
+        todo.extend(miss)
+        if len(miss) * 3 > len(group):           # много потерь — пачки помельче
+            size = max(300, size // 2)
+        print(f"запрос {used}: {len(group) - len(miss)} из {len(group)} реплик; готово {done}, осталось {len(todo)}"
+              + (f"; не нашлись: {' '.join(miss)}" if miss else ""), flush=True)
+    return done, todo
 
 
 def sample(only=()):
@@ -182,14 +295,29 @@ def main():
     ap.add_argument("--model"); ap.add_argument("--voice"); ap.add_argument("--dir")
     ap.add_argument("--instructions", default="")
     ap.add_argument("--missing", action="store_true")
+    ap.add_argument("--batch", action="store_true", help="пачками по ~1500 символов одним запросом")
+    ap.add_argument("--mix", action="store_true", help="озвучка «Смешанная»: --batch --missing рассказчиком Fish без арабских фраз")
+    ap.add_argument("--budget", type=int, default=45, help="--batch: не больше стольких запросов за запуск")
     ap.add_argument("ids", nargs="*")
     a = ap.parse_args()
     if a.sample:
         return sample(a.ids)
+    if a.mix:
+        a.lang, (a.model, a.voice, a.dir), a.batch, a.missing = "ru", MIX, True, True
     tx = texts(a.lang)
+    if a.mix:   # реплики с арабскими фразами остаются голосом Евгения
+        tx = {i: t for i, t in tx.items() if not AR_PHRASE.search(load_lines()[i])}
     out_dir = ROOT / "voice" / a.dir; out_dir.mkdir(parents=True, exist_ok=True)
     style = a.instructions or (RU_STYLE if a.lang == "ru" else AR_STYLE)
     todo = [i for i in (a.ids or tx) if tx.get(i) and not (a.missing and (out_dir / f"{i}.mp3").exists())]
+    if a.batch:
+        try:
+            ok, left = batch(tx, todo, a.model, a.voice, out_dir, a.budget)
+        except NoCredits as e:
+            sys.exit(f"нет кредитов OpenRouter (402), остановлено: {e}")
+        have = sorted(p.stem for p in out_dir.glob("*.mp3"))
+        (out_dir / "manifest.json").write_text(json.dumps(have, ensure_ascii=False, indent=0) + "\n", encoding="utf-8")
+        return print(f"озвучено {ok} из {len(todo)}; осталось {len(left)}; в папке {len(have)}")
     try:
         with ThreadPoolExecutor(1 if a.model.endswith(":free") else 6) as ex:
             ok = sum(ex.map(lambda i: speak(tx[i], a.model, a.voice, style, out_dir / f"{i}.mp3", a.lang), todo))
