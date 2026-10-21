@@ -99,7 +99,7 @@ FINISH = ("silenceremove=start_periods=1:start_threshold=-50dB,areverse,silencer
 # голосом Евгения — в voice/mix/ их просто нет, игра договаривает их основным голосом
 MIX = ("fish-audio/s2.1-pro-free:free", "48ec28a45588422b977a86460c11977f", "mix")
 AR_PHRASE = re.compile(r"ас-сал[яа]му|алейкум|бисмил|альхамдулил|субханал|акбар|иляха|илля|а'узу|хасбуна|расулю|мухаммадур|"
-                       r"ин ша|инша|маша|саллалла|ﷺ|ниъмаль|вакиль|\bамин\b", re.I)
+                       r"ин ша|инша|ма ша|маша|саллалла|ﷺ|ниъмаль|вакиль|\bамин\b", re.I)
 
 
 def finish(src, out, start=None, end=None):
@@ -185,12 +185,13 @@ def split_batch(wav, lines, asr):
         for k in range(b.size):
             hit[b.a + k] = b.b + k
     pos = [[j for j, e in enumerate(exp) if e[1] == i] for i in range(len(lines))]
-    span = []
+    span, edge = [], []
     for i, ps in enumerate(pos):
         got = [p for p in ps if p in hit]
-        # первое и последнее слово реплики должны найтись (иначе граница неточна), и почти все слова — тоже
-        ok = ps and ps[0] in hit and ps[-1] in hit and len(got) >= 0.8 * len(ps)
-        span.append((rec[hit[ps[0]]][1], rec[hit[ps[-1]]][2]) if ok else None)
+        # почти все слова реплики должны найтись; края — по крайним найденным словам
+        ok = ps and got and len(got) >= 0.8 * len(ps)
+        span.append((rec[hit[got[0]]][1], rec[hit[got[-1]]][2]) if ok else None)
+        edge.append((bool(ok) and got[0] == ps[0], bool(ok) and got[-1] == ps[-1]))   # нашлись ли первое и последнее слово
     # энергия кадрами по 10 мс, чтобы резать в тишине, а не по неточным меткам слов
     fr = 160; e = np.sqrt(np.convolve(a ** 2, np.ones(fr) / fr, "same")[::fr] + 1e-12)
     quiet = e < max(0.003, np.percentile(e, 20) * 1.5)
@@ -206,6 +207,9 @@ def split_batch(wav, lines, asr):
     out, last = [None] * len(lines), len(a) / 16000
     for i, sp in enumerate(span):
         if not sp:
+            continue
+        # не распознано крайнее слово (часто название буквы) — резать можно только по паузе до найденного соседа
+        if (not edge[i][0] and i and not span[i - 1]) or (not edge[i][1] and i < len(lines) - 1 and not span[i + 1]):
             continue
         # с соседом, который нашёлся, режем в паузе между ними; иначе — в паузе у края своей реплики
         st, n = (0.0, 99) if i == 0 else gap(span[i - 1][1] - 0.2 if span[i - 1] else sp[0] - 0.8, sp[0] + 0.2)
@@ -244,8 +248,8 @@ def batch(tx, ids, model, voice, out_dir, budget, chars=1500):
             if sp:
                 finish(raw, out_dir / f"{i}.mp3", *sp); done += 1
         todo.extend(miss)
-        if len(miss) * 3 > len(group):           # много потерь — пачки помельче
-            size = max(300, size // 2)
+        # много потерь — пачки помельче, всё нашлось — снова крупнее
+        size = max(300, size // 2) if len(miss) * 3 > len(group) else min(chars, size * 2) if not miss else size
         print(f"запрос {used}: {len(group) - len(miss)} из {len(group)} реплик; готово {done}, осталось {len(todo)}"
               + (f"; не нашлись: {' '.join(miss)}" if miss else ""), flush=True)
     return done, todo
