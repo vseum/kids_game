@@ -13,7 +13,7 @@ Object.assign(window.AYAT, {
 
 /* ============ РИСУНКИ (без живых существ) ============ */
 Object.assign(ART, {
-  w4_skyline: `<svg viewBox="0 0 400 100" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><g fill="#0B2236">
+  w4_skyline: `<svg viewBox="0 0 400 100" preserveAspectRatio="xMidYMax meet" aria-hidden="true"><g fill="#0B2236">
     <rect x="40" y="26" width="9" height="74" rx="2"/><path d="M38 28 L44.5 6 L51 28Z"/><rect x="36" y="44" width="17" height="4" rx="2"/>
     <rect x="350" y="20" width="9" height="80" rx="2"/><path d="M348 22 L354.5 0 L361 22Z"/><rect x="346" y="40" width="17" height="4" rx="2"/>
     <path d="M120 100 V70 Q120 40 160 30 Q200 40 200 70 V100Z"/><rect x="158.6" y="16" width="2.8" height="15" rx="1"/>
@@ -269,7 +269,10 @@ async function chShahada() {
   const { W, H } = size();
   w4Stars(60, "0 0 35% 0");
   const moon = el("div", "w4-moon", stage, '<svg viewBox="0 0 60 60" aria-hidden="true"><path d="M34 6 A24 24 0 1 0 54 42 A20 20 0 1 1 34 6Z" fill="#FFE29A"/></svg>'); moon.style.left = (W * 0.84) + "px"; moon.style.top = (H * 0.33) + "px";
-  const town = el("div", "layer", stage, ART.w4_skyline); town.style.bottom = "0"; town.style.height = "24%";
+  /* город целиком, с минаретами по краям (slice срезал верхушки на широком экране и сами минареты на телефоне);
+     полоса земли тянется на всю ширину фоном */
+  const town = el("div", "layer", stage, ART.w4_skyline); town.style.bottom = "0";
+  town.style.height = Math.min(size().H * 0.35, size().W / 4) + "px"; town.style.background = "linear-gradient(to top, #0B2236 16%, transparent 16%)";
   vignette();
   Snd.amb("wind", 0.4); fromDark(); await sleep(300);
   await chapterTitle(null, "Шахада", "shahada_0");

@@ -676,14 +676,17 @@ async function chShip() {
 
 /* ============ ГЛАВА 4: ГОРЫ ============ */
 function mountainsLayer(h = 0.42) {
-  const g = el("div", "layer", stage, `<svg viewBox="0 0 400 200" preserveAspectRatio="xMidYMax slice" aria-hidden="true"><defs>
+  const g = el("div", "layer", stage, `<svg viewBox="0 0 400 200" preserveAspectRatio="none" aria-hidden="true"><defs>
     <linearGradient id="gMt1" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9DB4C2"/><stop offset="1" stop-color="#7F98A8"/></linearGradient>
     <linearGradient id="gMt2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7D93A2"/><stop offset="1" stop-color="#5F7889"/></linearGradient></defs>
     <path d="M-20 200 L60 70 L110 120 L170 40 L240 130 L300 60 L420 200Z" fill="url(#gMt1)" opacity=".8"/>
     <path d="M60 70 L46 93 L58 88 L66 98 L74 86Z M170 40 L152 70 L166 63 L176 74 L186 62Z M300 60 L284 86 L298 80 L306 90 L316 79Z" fill="#fff" opacity=".9"/>
     <path d="M-20 200 L90 110 L150 150 L230 90 L330 160 L420 120 L420 200Z" fill="url(#gMt2)"/>
     <path d="M230 90 L216 106 L228 102 L236 110 L245 101Z" fill="#fff" opacity=".85"/></svg>`);
-  g.style.bottom = "18%"; g.style.height = (h * 100) + "%";
+  /* горы видны целиком, с вершинами: тянем по ширине не больше чем в 1,6 раза, на широком экране слой выше
+     (раньше slice срезал вершины ровной линией) */
+  const { W, H } = size();
+  g.style.bottom = "18%"; g.style.height = Math.min(H * 0.62, Math.max(H * h, W / 3.2)) + "px";
   return g;
 }
 async function chMountain() {
