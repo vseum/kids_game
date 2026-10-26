@@ -392,6 +392,22 @@ function seaLayer(seaTop, pal) {
 /* Деревянные кубики с буквами алфавита: краска, светлая фаска сверху, тень снизу, бок к солнцу светлее */
 const SKY_PAINT = [["#F9CF63", "#E09E2C"], ["#F18E62", "#CC5F3A"], ["#70BCDB", "#4690B3"], ["#8BCB72", "#5B9F4B"], ["#C39BE0", "#9469BC"], ["#F6AA78", "#D57C4A"], ["#6BCBB6", "#3FA18D"]];
 const SKY_LETTERS = ["أ", "ب", "ت", "ث", "ج", "ح", "خ", "د", "ذ"];
+/* Буква в кружке: меряем реальные границы глифа (у ج ح خ хвост уходит вниз, у أ — хамза сверху) и вписываем по центру.
+   Шрифт — настоящий Amiri для отдельных букв, как в «Алиф-Ба» */
+const LETTER_FONT = '"Amiri Letters", Amiri, serif';
+const glyphFit = (() => {
+  const memo = {}; let g = null;
+  return (ch, box = 17.5, cx = 50, cy = 18) => {
+    if (memo[ch]) return memo[ch];
+    g = g || document.createElement("canvas").getContext("2d");
+    g.font = `700 100px ${LETTER_FONT}`; g.textAlign = "center";
+    const m = g.measureText(ch), up = m.actualBoundingBoxAscent, dn = m.actualBoundingBoxDescent, l = m.actualBoundingBoxLeft, r = m.actualBoundingBoxRight;
+    const k = box / Math.max(up + dn, l + r, 1);
+    const fit = { size: (100 * k).toFixed(2), x: (cx - (r - l) / 2 * k).toFixed(2), y: (cy + (up - dn) / 2 * k).toFixed(2) };
+    if (document.fonts.check(`700 100px ${LETTER_FONT}`, ch)) memo[ch] = fit;   // шрифт ещё грузится — посчитаем снова
+    return fit;
+  };
+})();
 function blockSVG(i) {
   const [a, b] = SKY_PAINT[i % SKY_PAINT.length], g = "bk" + i + "x" + Math.floor(Math.random() * 1e6), r = Art.light.x > size().W / 2;
   return `<svg viewBox="0 0 100 36" aria-hidden="true"><defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs>
@@ -401,7 +417,7 @@ function blockSVG(i) {
     <rect y="29.5" width="100" height="6.5" rx="4" fill="#3B2A10" opacity=".16"/>
     <rect x="${r ? 93 : 0}" width="7" height="36" rx="4" fill="#fff" opacity=".2"/><rect x="${r ? 0 : 93}" width="7" height="36" rx="4" fill="#2A1C08" opacity=".12"/>
     <circle cx="50" cy="18" r="13" fill="#FFF8E6" opacity=".88"/><circle cx="50" cy="18.6" r="13" fill="none" stroke="${b}" stroke-width="1.2" opacity=".5"/>
-    <text x="50" y="26.5" text-anchor="middle" font-family="Amiri, serif" font-size="22" font-weight="700" fill="${b}" stroke="#3A260C" stroke-width=".5" stroke-opacity=".35">${SKY_LETTERS[i % SKY_LETTERS.length]}</text></svg>`;
+    ${(() => { const ch = SKY_LETTERS[i % SKY_LETTERS.length], f = glyphFit(ch); return `<text x="${f.x}" y="${f.y}" text-anchor="middle" font-family='${LETTER_FONT}' font-size="${f.size}" font-weight="700" fill="${b}" stroke="#3A260C" stroke-width=".4" stroke-opacity=".35">${ch}</text>`; })()}</svg>`;
 }
 /* Башенный кран: решётчатая мачта и стрела, кабина со стеклом, противовес, оттяжки. Всё освещено со стороны солнца */
 function craneSVG(W, H, mx, jibY, groundY) {
@@ -446,13 +462,15 @@ function towerGame(groundY, near) {
   Snd.craneBuild(); setTimeout(() => Snd.motor(true), 1500);
   const trolley = el("div", "trolley", stage, trolleySVG(cable)); Object.assign(trolley.style, { top: (jibY + 1) + "px", width: "44px", height: (cable + 18) + "px", zIndex: 5 });
   Art.fall(trolley, 1300, -30, 700);
-  const placed = []; let cur = null, topX = W / 2, topY = groundY, drops = 0, busy = false, stop = false, amp = 1, baseShadow = null;
+  const placed = []; let cur = null, topX = W / 2, topY = groundY, drops = 0, busy = false, stop = false, amp = 1, baseShadow = null, ph = 0, lastT = 0;
   const t0 = performance.now();
   const newBlock = (delay = 0) => { cur = obj("block2", blockSVG(drops), W / 2, craneY, bw, bh); cur.style.zIndex = 6; cur.animate([{ opacity: 0, scale: ".6", translate: "-50% -80%" }, { opacity: 1, scale: "1", translate: "-50% -50%" }], { duration: 420, delay, easing: "cubic-bezier(.2,1.5,.4,1)", fill: "backwards" }); setTimeout(() => Snd.hook(W / 2), delay); };
   newBlock(1700);
   const loop = t => {
     if (stop) return;
-    if (cur && !busy) { const x = W / 2 + W * 0.3 * Math.sin((t - t0) / 700); put(cur, x, craneY); trolley.style.left = x + "px"; cur.style.rotate = (Math.cos((t - t0) / 700) * -2.5).toFixed(2) + "deg"; Snd.motorSpeed(Math.abs(Math.cos((t - t0) / 700))); }
+    /* размах: 8 с у первого кубика, с каждым этажом чуть быстрее (до 6,5 с) — малышу успеть, но азарт растёт */
+    const dt = lastT ? Math.min(50, t - lastT) : 16; lastT = t;
+    if (cur && !busy) { ph += dt / Math.max(1030, 1280 - placed.length * 50); const x = W / 2 + W * 0.28 * Math.sin(ph); put(cur, x, craneY); trolley.style.left = x + "px"; cur.style.rotate = (Math.cos(ph) * -2).toFixed(2) + "deg"; Snd.motorSpeed(Math.abs(Math.cos(ph))); }
     if (amp > 5 && t - (loop.cr || 0) > rnd(1400, 2600)) { loop.cr = t; Snd.creak(topX, Math.min(0.12, 0.03 + amp * 0.006)); }
     if (cur && !busy) {
       const on = placed.length > 0 && Math.abs(cur._x - topX) < bw * 0.3;
@@ -570,6 +588,7 @@ async function chSky() {
   await say("k1");
 
   cue("k2");
+  await document.fonts.load(`700 100px ${LETTER_FONT}`, SKY_LETTERS.join("")).catch(() => {});
   const blocks = await towerGame(groundY, pNear);
   await say("k3");
   blocks.forEach(b => fadeOut(b, 500));
