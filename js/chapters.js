@@ -217,6 +217,7 @@ function hold(e, ms, onTick, timeout = 20000) {
     const ring = el("div", "holdring"); Object.assign(ring.style, { width: r + "px", height: r + "px", left: e._x + "px", top: e._y + "px" });
     let acc = 0, down = false, last = 0, fin = false, auto = false;
     e.classList.add("hint", "tapme");
+    const coach = typeof Art !== "undefined" ? Art.coach(() => ({ x: e._x, y: e._y }), "hold", { delay: 1500 }) : null;
     const dn = ev => { ev.preventDefault(); down = true; e.classList.remove("hint"); };
     const up = () => { down = false; };
     e.addEventListener("pointerdown", dn); window.addEventListener("pointerup", up); window.addEventListener("pointercancel", up);
@@ -226,7 +227,7 @@ function hold(e, ms, onTick, timeout = 20000) {
       if (down || auto) { acc += dt; onTick && onTick(Math.min(1, acc / ms), dt); }
       ring.style.setProperty("--p", Math.min(1, acc / ms).toFixed(3));
       if (acc >= ms) {
-        fin = true; e.classList.remove("hint", "tapme");
+        fin = true; e.classList.remove("hint", "tapme"); if (coach) coach.stop();
         e.removeEventListener("pointerdown", dn); window.removeEventListener("pointerup", up); window.removeEventListener("pointercancel", up);
         fadeOut(ring, 400); return res();
       }
@@ -241,6 +242,7 @@ function dragTo(item, target, timeout = 20000) {
   return new Promise(res => {
     let fin = false, off = null; const home = { x: item._x, y: item._y };
     item.classList.add("hint", "tapme"); item.style.zIndex = 9;
+    const coach = typeof Art !== "undefined" ? Art.coach(() => fin ? null : ({ x: item._x, y: item._y, dx: target._x - item._x, dy: target._y - item._y }), "drag", { delay: 1500 }) : null;
     const mv = ev => { if (!off || fin) return; const p = local(ev); put(item, p.x + off.x, p.y + off.y); };
     const upf = () => {
       if (!off || fin) return; off = null;
@@ -248,7 +250,7 @@ function dragTo(item, target, timeout = 20000) {
       else { move(item, home.x, home.y, 350, "ease-out"); item.classList.add("hint"); }
     };
     const done = async () => {
-      if (fin) return; fin = true; item.classList.remove("hint", "tapme"); item.onpointerdown = null;
+      if (fin) return; fin = true; item.classList.remove("hint", "tapme"); item.onpointerdown = null; if (coach) coach.stop();
       window.removeEventListener("pointermove", mv); window.removeEventListener("pointerup", upf);
       await move(item, target._x, target._y - 10, 300, "ease-in"); res();
     };
@@ -262,8 +264,9 @@ function strokes(e, n, onStroke, timeout = 15000) {
   return new Promise(res => {
     let k = 0, lastX = 0, dir = 0, fin = false, active = false, moved = false;
     e.classList.add("hint", "tapme");
+    const coach = typeof Art !== "undefined" ? Art.coach(() => ({ x: e._x, y: e._y }), "swipe", { delay: 1500 }) : null;
     const count = () => { k++; onStroke && onStroke(k); if (k >= n) setTimeout(end, 300); };
-    const end = () => { if (fin) return; fin = true; e.classList.remove("hint", "tapme"); e.removeEventListener("pointerdown", dn); window.removeEventListener("pointermove", mv); window.removeEventListener("pointerup", up); res(); };
+    const end = () => { if (fin) return; fin = true; e.classList.remove("hint", "tapme"); if (coach) coach.stop(); e.removeEventListener("pointerdown", dn); window.removeEventListener("pointermove", mv); window.removeEventListener("pointerup", up); res(); };
     const dn = ev => { ev.preventDefault(); active = true; moved = false; lastX = local(ev).x; e.classList.remove("hint"); };
     const mv = ev => {
       if (!active || fin) return; const x = local(ev).x; if (Math.abs(x - lastX) < 14) return;
@@ -286,7 +289,8 @@ function timingGame(hits, onHit, timeout = 30000) {
     const step = t => { if (fin) return; pos = 0.5 + 0.47 * Math.sin((t - t0) / 420); mark.style.left = (pos * 100) + "%"; requestAnimationFrame(step); };
     requestAnimationFrame(step);
     const field = el("div", "tapfield"); field.style.zIndex = 20;
-    const end = () => { if (fin) return; fin = true; field.remove(); fadeOut(bar, 300); res(); };
+    const coach = typeof Art !== "undefined" ? Art.coach(() => { const r = bar.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top - 50 }; }, "tap", { delay: 1500 }) : null;
+    const end = () => { if (fin) return; fin = true; if (coach) coach.stop(); field.remove(); fadeOut(bar, 300); res(); };
     field.addEventListener("pointerdown", () => {
       if (fin) return;
       if (Math.abs(pos - zx) < 0.13) { k++; onHit(k); placeZone(); if (k >= hits) setTimeout(end, 300); }
@@ -302,9 +306,10 @@ function timeSlider(onChange, timeout = 20000) {
     const knob = tr.querySelector(".tknob"), fill = tr.querySelector(".tfill"), label = tr.querySelector(".tlabel");
     let p = 0, drag = false, fin = false;
     knob.classList.add("hint");
+    const coach = typeof Art !== "undefined" ? Art.coach(() => { const r = knob.getBoundingClientRect(), tr0 = tr.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2, dx: tr0.right - (r.left + r.width / 2) - 6, dy: 0 }; }, "drag", { delay: 1500 }) : null;
     const set = v => { p = Math.max(p, Math.min(1, v)); knob.style.left = (p * 100) + "%"; fill.style.width = (p * 100) + "%"; label.textContent = "День " + (1 + Math.round(p * 99)); onChange(p); };
     const fromEv = ev => { const r = tr.getBoundingClientRect(); return (ev.clientX - r.left) / r.width; };
-    const end = () => { if (fin) return; fin = true; window.removeEventListener("pointermove", mv); window.removeEventListener("pointerup", up); setTimeout(() => fadeOut(tr, 400), 600); res(); };
+    const end = () => { if (fin) return; fin = true; if (coach) coach.stop(); window.removeEventListener("pointermove", mv); window.removeEventListener("pointerup", up); setTimeout(() => fadeOut(tr, 400), 600); res(); };
     const mv = ev => { if (drag) set(fromEv(ev)); };
     const up = () => { drag = false; if (p >= 0.96) { set(1); end(); } };
     tr.addEventListener("pointerdown", ev => { ev.preventDefault(); drag = true; knob.classList.remove("hint"); set(fromEv(ev)); });
@@ -484,12 +489,14 @@ function towerGame(groundY, near) {
   const field = el("div", "tapfield"); field.style.zIndex = 7;
   const guide = el("div", "dropguide"); guide.style.zIndex = 5; guide.style.opacity = "0";
   const dust = (x, y, n = 14, sp = 3) => Art.burst(x, y, { kind: "dust", colors: ["#EFE6D2", "#D9CBAA", "#FFFFFF"], n, speed: sp, g: -0.015, life: 0.9, size: 8, alpha: 0.7 });
+  /* Кран сам не роняет: ребёнок нажимает сам. Рука-указатель показывает «нажми» в начале и когда ребёнок медлит */
+  let coachT = null;
   return new Promise(res => {
     let autoT = null;
-    const arm = () => { clearTimeout(autoT); autoT = setTimeout(drop, 5000); };
+    const arm = () => { clearTimeout(autoT); autoT = setTimeout(() => guide.classList.add("pulse"), 6000); };
     async function drop(ev) {
       if (ev && ev.clientX !== undefined) Art.ripple(ev.clientX, ev.clientY);
-      if (busy || !cur) return; busy = true; clearTimeout(autoT);
+      if (busy || !cur) return; busy = true; clearTimeout(autoT); guide.classList.remove("pulse");
       const b = cur; cur = null; const landY = topY - bh / 2;
       b.style.rotate = "0deg"; Snd.release(b._x);
       await move(b, b._x, landY, 380, "ease-in");
@@ -512,7 +519,7 @@ function towerGame(groundY, near) {
       newBlock(); busy = false; arm();
     }
     async function collapse() {
-      clearTimeout(autoT); field.remove(); guide.remove(); fadeOut(trolley); fadeOut(crane, 900); Snd.motor(false);
+      clearTimeout(autoT); field.remove(); guide.remove(); if (coachT) coachT.stop(); fadeOut(trolley); fadeOut(crane, 900); Snd.motor(false);
       amp *= 2.2; Snd.noise({ kind: "brown", type: "lowpass", f: 400, dur: 1.2, gain: 0.35, attack: 0.3 }); Snd.creak(topX, 0.13); setTimeout(() => Snd.creak(topX, 0.15), 500);
       await sleep(1300); stop = true;
       const n = placed.length, dir = Math.random() < 0.5 ? -1 : 1;
@@ -524,7 +531,7 @@ function towerGame(groundY, near) {
       setTimeout(() => Art.shake(6, 420), 700);
       await sleep(1300); if (baseShadow) fadeOut(baseShadow, 600); res(placed);
     }
-    setTimeout(() => { field.addEventListener("pointerdown", drop); arm(); }, 1800);   // кран собирается — пока не роняем
+    setTimeout(() => { field.addEventListener("pointerdown", drop); arm(); coachT = Art.coach(() => ({ x: W / 2, y: Math.min(H * 0.8, groundY - 40) }), "tap", { delay: 400, idle: 5000 }); }, 1800);   // кран собирается — пока не роняем
   });
 }
 /* Доска: поднять пальцем и отпустить в воздухе — падает. Тень на земле следит за высотой */
@@ -547,7 +554,7 @@ function plankDrop(groundY, near) {
     pl.classList.add("hint", "tapme");
     const mv = ev => { if (!off || fin) return; const p = local(ev); put(pl, p.x + off.x, Math.min(groundY - 16, p.y + off.y)); };
     const finish = async () => {
-      fin = true; window.removeEventListener("pointermove", mv); window.removeEventListener("pointerup", up); pl.classList.remove("hint", "tapme");
+      fin = true; window.removeEventListener("pointermove", mv); window.removeEventListener("pointerup", up); pl.classList.remove("hint", "tapme"); if (pl._coach) pl._coach.stop();
       await flight(pl, groundY - 16, 0); pl.style.transform = "rotate(0deg)";
       Art.burst(pl._x, groundY, { kind: "dust", colors: ["#EFE6D2", "#D9CBAA", "#FFFFFF"], n: 22, speed: 4, g: -0.015, life: 1, size: 9, alpha: 0.7 }); Art.shake(4);
       Snd.wood({ f: 210, gain: 0.45, x: pl._x }); Snd.wood({ f: 260, gain: 0.22, x: pl._x, at: 0.12 }); Snd.metal({ f: 2600, gain: 0.03, x: pl._x, at: 0.05, ring: 0.3 });
@@ -556,7 +563,9 @@ function plankDrop(groundY, near) {
     const up = () => { if (!off || fin) return; off = null; if (pl._y < groundY - 90) finish(); else pl.classList.add("hint"); };
     pl.onpointerdown = ev => { ev.preventDefault(); const p = local(ev); off = { x: pl._x - p.x, y: pl._y - p.y }; pl.classList.remove("hint"); Snd.wood({ f: 520, gain: 0.18, x: pl._x }); Art.ripple(ev.clientX, ev.clientY); };
     window.addEventListener("pointermove", mv); window.addEventListener("pointerup", up);
-    setTimeout(async () => { if (fin) return; fin = true; await move(pl, pl._x, H * 0.5, 900, "ease-out"); await sleep(300); fin = false; finish(); }, 18000);
+    // сама не взлетает: рука показывает «возьми и подними»
+    const coachP = Art.coach(() => ({ x: pl._x, y: pl._y, dx: 0, dy: -Math.min(200, H * 0.26) }), "drag", { delay: 900, idle: 5000 });
+    pl._coach = coachP;
   });
 }
 async function chSky() {

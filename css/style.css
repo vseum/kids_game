@@ -663,3 +663,32 @@ a.chip { display: inline-block; text-decoration: none; font-size: 14px; }
 /* слабое устройство: без лучей, качания и зерна */
 .lowfx .godrays, .lowfx .filmgrain { display: none; }
 .lowfx .tuft, .lowfx .tree2, .lowfx .cloud2 { animation: none !important; }
+.dropguide.pulse { animation: guidePulse 1s ease-in-out infinite; }
+@keyframes guidePulse { 50% { box-shadow: 0 0 14px rgba(255,255,255,.95); } }
+/* ---------- указатель «куда нажать» (Art.pointer / Art.coach) ---------- */
+.pointer { position: absolute; z-index: 40; width: 0; height: 0; pointer-events: none; animation: ptIn .35s ease-out; }
+.pointer .ph { position: absolute; left: -29px; top: -11px; width: 88px; height: 88px; transform-origin: 29px 11px; filter: drop-shadow(0 6px 8px rgba(10,30,40,.35)); }
+.pointer .ph svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.pointer::after { content: ""; position: absolute; left: -26px; top: -26px; width: 52px; height: 52px; border-radius: 50%; border: 3.5px solid #fff; box-shadow: 0 0 14px rgba(255,214,110,.9), inset 0 0 10px rgba(255,214,110,.6); opacity: 0; }
+.pointer .burst { opacity: 0; transform-origin: 21px 4px; }
+@keyframes ptIn { from { opacity: 0; } }
+/* нажми */
+.pointer.tap .ph { animation: ptTap 1.7s cubic-bezier(.45,0,.3,1) infinite; }
+.pointer.tap .burst { animation: ptBurst 1.7s infinite; }
+.pointer.tap::after { animation: ptRing 1.7s infinite; }
+@keyframes ptTap { 0% { transform: translate(30px, 34px) rotate(8deg); } 32% { transform: translate(0, 0) rotate(0); } 42% { transform: translate(0, 2px) scale(.86); } 54% { transform: translate(0, 0) scale(1); } 76% { transform: translate(0, 0); } 100% { transform: translate(30px, 34px) rotate(8deg); } }
+@keyframes ptBurst { 0%, 40% { opacity: 0; transform: scale(.5); } 47% { opacity: 1; transform: scale(1); } 66%, 100% { opacity: 0; transform: scale(1.25); } }
+@keyframes ptRing { 0%, 40% { opacity: 0; transform: scale(.3); } 44% { opacity: 1; } 70%, 100% { opacity: 0; transform: scale(1.3); } }
+/* нажми и держи */
+.pointer.hold .ph { animation: ptHold 2.4s cubic-bezier(.45,0,.3,1) infinite; }
+.pointer.hold::after { animation: ptHoldRing 2.4s infinite; }
+@keyframes ptHold { 0% { transform: translate(30px, 34px); } 22% { transform: translate(0, 0); } 30%, 80% { transform: translate(0, 2px) scale(.86); } 88% { transform: scale(1); } 100% { transform: translate(30px, 34px); } }
+@keyframes ptHoldRing { 0%, 28% { opacity: 0; transform: scale(.3); } 32% { opacity: 1; transform: scale(.4); } 80% { opacity: 1; transform: scale(1.2); } 90%, 100% { opacity: 0; transform: scale(1.3); } }
+/* тяни к цели */
+.pointer.drag .ph { animation: ptDrag 2.6s cubic-bezier(.45,0,.3,1) infinite; }
+.pointer.drag::after { animation: ptRing 2.6s infinite; }
+@keyframes ptDrag { 0% { transform: translate(24px, 28px); opacity: 0; } 12% { opacity: 1; transform: translate(0, 0); } 22% { transform: scale(.86); } 70% { transform: translate(var(--dx), var(--dy)) scale(.86); } 80% { transform: translate(var(--dx), var(--dy)) scale(1); opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)); opacity: 0; } }
+/* води туда-сюда */
+.pointer.swipe .ph { animation: ptSwipe 2s ease-in-out infinite; }
+@keyframes ptSwipe { 0%, 100% { transform: translate(-36px, 0) scale(.88); } 50% { transform: translate(36px, 0) scale(.88); } }
+@media (prefers-reduced-motion: reduce) { .pointer .ph, .pointer::after, .pointer .burst { animation: none !important; } .pointer .burst { opacity: 1; } }

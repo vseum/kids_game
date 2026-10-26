@@ -31,7 +31,7 @@ async function move(e, x, y, ms, easing = "ease-in-out") {
   put(e, x, y); a.cancel();
 }
 function local(ev) { const r = stage.getBoundingClientRect(); return { x: ev.clientX - r.left, y: ev.clientY - r.top }; }
-function clearStage() { stage.innerHTML = ""; stage.getAnimations().forEach(a => a.cancel()); Snd.amb(null); if (window.Art) Art.reset(); }
+function clearStage() { stage.innerHTML = ""; stage.getAnimations().forEach(a => a.cancel()); Snd.amb(null); if (typeof Art !== "undefined") Art.reset(); }
 async function toDark() { fadeEl.classList.add("on"); await sleep(480); }
 function fromDark() { fadeEl.classList.remove("on"); }
 
@@ -728,7 +728,7 @@ const tapOnce = (e, onTap, timeout) => taps(e, 1, onTap, timeout);
 /* ============ ПРАЗДНИК, НАГРАДЫ, СОХРАНЕНИЕ ============ */
 function celebrate() {
   const { W, H } = size(); Snd.sparkle();
-  if (window.Art) {   // волна света и золотые звёздочки (js/art.js)
+  if (typeof Art !== "undefined") {   // волна света и золотые звёздочки (js/art.js)
     Art.glow(W / 2, H * 0.45, Math.min(W, H) * 0.9);
     Art.burst(W / 2, H * 0.45, { n: 46, speed: 9, g: 0.16, life: 1.4, size: 7, up: 2 });
     Art.burst(W / 2, H * 0.45, { n: 18, kind: "chip", colors: ["#F5C451", "#FFFFFF", "#7FD0E8", "#9ED36A"], speed: 7, g: 0.2, life: 1.6, size: 5, up: 3 });

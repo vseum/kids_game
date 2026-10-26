@@ -232,6 +232,40 @@ const Art = (() => {
   function rise(e, delay = 0, dy = 40, ms = 1400) { if (!reduced) e.animate([{ transform: `translateY(${dy}px)`, opacity: 0 }, { transform: "none", opacity: 1 }], { duration: ms, delay, easing: "cubic-bezier(.2,.8,.2,1)", fill: "backwards" }); return e; }
   function pop(e, delay = 0, ms = 650) { if (!reduced) e.animate([{ scale: "0" }, { scale: "1.08", offset: 0.7 }, { scale: "1" }], { duration: ms, delay, easing: "cubic-bezier(.2,.9,.3,1)", fill: "backwards" }); return e; }
   function fall(e, delay = 0, dy = -60, ms = 1100) { if (!reduced) e.animate([{ transform: `translateY(${dy}px)`, opacity: 0 }, { transform: "none", opacity: 1 }], { duration: ms, delay, easing: "cubic-bezier(.2,1.2,.3,1)", fill: "backwards" }); return e; }
+  /* ---------- указатель «куда нажать»: стилизованная кисть-перчатка без лица ----------
+     Остриё пальца — в точке (x, y). Режимы: tap — нажми, hold — нажми и держи, drag — тяни (на dx, dy), swipe — води туда-сюда */
+  const HAND = `<svg viewBox="-12 -12 88 88" aria-hidden="true"><g class="burst" stroke-linecap="round" stroke-width="3.4">
+      <path d="M21 -9 V-2" stroke="#F5C451"/><path d="M7 -3 L11.5 1.5" stroke="#FF8A5B"/><path d="M35 -3 L30.5 1.5" stroke="#5BC3B0"/><path d="M2 9 H8" stroke="#7FB4F0"/><path d="M40 9 H34" stroke="#F5C451"/></g>
+    <g stroke="#1D3B52" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+      <path d="M15 34 V11 a6 6 0 0 1 12 0 V26 a4.5 4.5 0 0 1 9 .5 V28 a4.5 4.5 0 0 1 8.5 1.5 V31 a4 4 0 0 1 7.5 2 V46 c0 8 -6 14 -14 14 H31 c-4.5 0 -7.5 -1.8 -10 -5 L8.5 44 c-1.8 -2.5 -.5 -6 2.6 -6.2 c1.8 -.1 3.2 .8 3.9 2.2 Z" fill="#FFFFFF"/>
+      <path d="M31 31.5 V36 M39.5 33 V37.5 M47.5 35.5 V39" stroke-width="2.2" fill="none"/>
+      <path d="M17 13 V22" stroke="#E7EEF3" stroke-width="3" fill="none"/></g>
+    <path d="M24 57.5 H46 a3 3 0 0 1 3 3 V64 H21 V60.5 a3 3 0 0 1 3 -3Z" fill="#F5C451" stroke="#1D3B52" stroke-width="2.6" stroke-linejoin="round"/></svg>`;
+  function pointer(x, y, mode = "tap", dx = 0, dy = 0) {
+    const p = el("div", "pointer " + mode, app, `<div class="ph">${HAND}</div>`);
+    Object.assign(p.style, { left: x + "px", top: y + "px" });
+    p.style.setProperty("--dx", dx.toFixed(0) + "px"); p.style.setProperty("--dy", dy.toFixed(0) + "px");
+    return p;
+  }
+  /* Подсказка-указатель для действия: появляется через delay, прячется при любом касании, снова — после idle мс без касаний.
+     where() → { x, y, dx?, dy? } (координаты сцены). Одновременно на экране — только один указатель */
+  const coaches = new Set();
+  function coach(where, mode = "tap", { delay = 1200, idle = 5000 } = {}) {
+    let p = null, t = null, live = true;
+    const show = () => {
+      if (!live || p) return;
+      if (document.querySelector(".pointer")) { t = setTimeout(show, 1500); return; }
+      const q = where(); if (!q) return;
+      p = pointer(q.x, q.y, mode, q.dx || 0, q.dy || 0);
+    };
+    const hide = () => { if (!p) return; const e = p; p = null; e.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220 }).onfinish = () => e.remove(); };
+    const kick = () => { hide(); clearTimeout(t); if (live) t = setTimeout(show, idle); };
+    app.addEventListener("pointerdown", kick, true);
+    t = setTimeout(show, delay);
+    const c = { stop() { live = false; clearTimeout(t); hide(); app.removeEventListener("pointerdown", kick, true); coaches.delete(c); }, kick };
+    coaches.add(c); return c;
+  }
+
   /* Отклик касания: кольцо в точке нажатия + короткая вибрация */
   function ripple(x, y) {
     const r = el("div", "ripple", app); Object.assign(r.style, { left: x + "px", top: y + "px" });
@@ -251,6 +285,6 @@ const Art = (() => {
   }
   if (lite) document.body.classList.add("lowfx");
 
-  return { light, lite, reduced, autoQuality, plane, pan, enter, shake, sky, sun, cloud, range, trees, meadow, tuft, flower, frame, shadow, cloudShadows, rise, pop, fall, pollen, burst, glow, ripple, seeded,
-    reset() { planes.length = 0; cv = null; parts = []; motes = []; } };
+  return { light, lite, reduced, autoQuality, plane, pan, enter, shake, sky, sun, cloud, range, trees, meadow, tuft, flower, frame, shadow, cloudShadows, rise, pop, fall, pointer, coach, pollen, burst, glow, ripple, seeded,
+    reset() { planes.length = 0; cv = null; parts = []; motes = []; [...coaches].forEach(c => c.stop()); document.querySelectorAll(".pointer").forEach(e => e.remove()); } };
 })();

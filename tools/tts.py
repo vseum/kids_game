@@ -116,6 +116,66 @@ def fetch(url, dest):
     return dest
 
 
+# Ударения: нейросеть RuAccent (контекст, омографы) + наш словарь STRESS/PHRASES главнее (арабские слова, имена).
+# Буквы «ё» берём только из нашего текста: сеть путает «небо/нёбо», а в текстах игры ё уже проставлена.
+_ACC = None
+VOW = "аеёиоуыэюяАЕЁИОУЫЭЮЯ"
+
+
+def _ruaccent(text):
+    global _ACC
+    if _ACC is None:
+        from ruaccent import RUAccent
+        _ACC = RUAccent()
+        _ACC.load(omograph_model_size="turbo3.1", use_dictionary=True, tiny_mode=False)
+        import numpy as np   # модель ударений для незнакомых слов ждёт token_type_ids, а библиотека его не даёт (разные версии)
+        for m in (getattr(_ACC, "accent_model", None), getattr(_ACC, "omograph_model", None), getattr(_ACC, "stress_usage_predictor", None)):
+            ses = getattr(m, "session", None)
+            if ses is None:
+                continue
+            need = {i.name for i in ses.get_inputs()}
+            if "token_type_ids" in need:
+                run0 = ses.run
+                def run(out, feed, _r=run0):
+                    if "token_type_ids" not in feed:
+                        feed = dict(feed, token_type_ids=np.zeros_like(feed["input_ids"]))
+                    return _r(out, feed)
+                m.session = type("S", (), {"run": staticmethod(run), "get_inputs": ses.get_inputs, "get_outputs": ses.get_outputs})()
+    return _ACC.process_all(text)
+
+
+def _overrides():
+    ovr = {}
+    for word, stressed in STRESS.items():
+        ovr[word] = stressed
+    for said in PHRASES.values():
+        for w in said.split():
+            ovr[w.replace("+", "")] = w
+    return ovr
+
+
+def accent(text):
+    """Текст для Silero с ударениями «+» перед ударной гласной."""
+    plain = prepare(text, stress=False)
+    acc = _ruaccent(plain)
+    out, i = [], 0
+    for ch in acc:                      # ё — только где она есть у нас
+        if ch == "+":
+            out.append(ch); continue
+        o = plain[i] if i < len(plain) else ch
+        out.append(o if ch in "ёЁ" and o in "еЕ" else ch); i += 1
+    acc = "".join(out)
+    if acc.replace("+", "") != plain:   # сеть поменяла что-то кроме ударений — не рискуем
+        return prepare(text, stress=True)
+    ovr = _overrides()
+    def fix(m):
+        w = m.group(0); base = w.replace("+", "")
+        return ovr.get(base, w)
+    acc = re.sub(r"[\w+'-]+", fix, acc)
+    # слово из одной гласной сети не нужно, а лишний «+» Silero читает плохо
+    return re.sub(r"\+(?=[^\w]|$)", "", acc)
+
+
 class Engine:
     """Синтез одной фразы: возвращает (массив float32, частота)."""
     loaded = {}
@@ -170,7 +230,7 @@ def render(lines, ids, speaker, missing):
         if missing and out.exists():
             continue
         audio, rate = [], 48000
-        for part in chunks(prepare(lines[key], stress=not piper)):
+        for part in chunks(accent(lines[key]) if not piper else prepare(lines[key], stress=False)):
             a, rate = Engine.say(speaker, part)
             audio += [a, np.zeros(int(rate * 0.25), dtype=np.float32)]
         with tempfile.NamedTemporaryFile(suffix=".wav") as tmp:
