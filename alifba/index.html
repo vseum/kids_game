@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
-<title>Алиф-Ба — арабские буквы для детей</title>
-<meta name="description" content="Игра для детей: арабские буквы, огласовки и первые слова из Корана.">
+<title>Алиф-Ба — учимся читать Коран по «Муаллим сани»</title>
+<meta name="description" content="Игра для детей: учимся читать Коран по книге «Муаллим сани» — буквы, где рождается звук, слоги и слова из книги.">
 <meta name="theme-color" content="#0E2A3A">
 <meta property="og:title" content="Алиф-Ба">
-<meta property="og:description" content="Арабские буквы и чтение Корана для детей">
+<meta property="og:description" content="Учимся читать Коран по «Муаллим сани»">
 <link rel="preload" href="/igra/fonts/nunito-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="/igra/fonts/fonts.css">
 <link rel="stylesheet" href="/igra/css/style.css">
@@ -78,7 +78,7 @@
     <div class="sbox">
       <p class="bism" lang="ar" dir="rtl">بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ</p>
       <h1 class="al-h1"><span lang="ar" dir="rtl">ا ب ت</span>Алиф-Ба</h1>
-      <p class="sub">Учимся читать арабские буквы и слова из Корана</p>
+      <p class="sub">Учимся читать Коран по книге «Муаллим сани»</p>
       <p id="hello" class="hello" hidden>Ас-саляму алейкум, <b></b>!<button id="goName">это не я</button></p>
       <div class="sbtns">
           <button id="go" class="btn big"><span id="goT">Играть</span><small id="goSub" hidden></small></button>
@@ -87,7 +87,7 @@
         <button id="goVoice" class="chip">Голос: <b>Евгений</b></button>
       </div>
       <p class="hint-sound">Играть лучше со звуком</p>
-      <p class="credits">Чтец: Мишари аль-Афаси · Голос: Silero TTS · Слова из Корана: пословная запись quran.com · Арабские звуки: синтез Microsoft, будут заменены живыми записями · <a href="/igra/">Ещё игра: Аяты вокруг нас</a></p>
+      <p class="credits">Упражнения: «Муаллим сани» (Ахмадхади Максуди) · Голос: Silero TTS · Слова из Корана: пословная запись чтеца quran.com · Остальные слоги: синтез Microsoft, проверены распознаванием речи, будут заменены живыми записями · <a href="/igra/">Ещё игра: Аяты вокруг нас</a></p>
     </div>
   </section>
 
@@ -101,20 +101,17 @@
 <script src="/igra/js/lines.js"></script>
 <script src="js/lines_letters.js"></script>
 <script src="js/lines_core.js"></script>
-<script src="js/lines_l2.js"></script>
-<script src="js/lines_l3.js"></script>
-<script src="js/lines_l4.js"></script>
-<script src="js/lines_l5.js"></script>
+<script src="js/lines_ms.js"></script>
 <script src="/igra/js/ayat_words.js"></script>
 <script src="/igra/js/engine.js"></script>
+<script src="/igra/js/art.js"></script>
 <script src="/igra/js/chapters.js"></script>
 <script src="js/data.js"></script>
 <script src="js/core.js"></script>
-<script src="js/l2.js"></script>
-<script src="js/l3.js"></script>
-<script src="js/l4.js"></script>
-<script src="js/l5.js"></script>
-<script>ITEMS.forEach(i => { if (/^l\d_/.test(i.id)) i.award = "Новое сокровище в копилке"; });</script>
+<script src="js/ms_data.js"></script>
+<script src="js/ms_audio.js"></script>
+<script src="js/mouth.js"></script>
+<script src="js/ms.js"></script>
 <script src="/igra/js/pay.js"></script>
 <script src="/igra/js/main.js"></script>
 </body>

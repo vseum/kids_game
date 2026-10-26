@@ -21,7 +21,7 @@ from tts import load_lines  # noqa: E402
 
 BASE = "eugene"
 CACHE = ROOT / "tools" / ".cache" / "qdc"
-FILES = ["js/ayat.js", "js/w12.js", "js/w3.js", "js/w4.js", "js/w5.js", "alifba/js/l5.js"]
+FILES = ["js/ayat.js", "js/w12.js", "js/w3.js", "js/w4.js", "js/w5.js"]
 MARK = re.compile(r"^[\u06D6-\u06ED\u0615-\u061A۞]+$")
 
 
