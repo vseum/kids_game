@@ -1,7 +1,7 @@
 #!/bin/sh
-# Копирует игру в репозиторий сайта рахмат.рус (папка igra/). Запуск: sh tools/publish.sh ../rahmat
+# Копирует игры в репозиторий сайта razumus.ru (папка igra/). Запуск: sh tools/publish.sh ../razumus
 set -e
-SITE="${1:-../rahmat}"
+SITE="${1:-../razumus}"
 cd "$(dirname "$0")/.."
 rm -rf "$SITE/igra"
 mkdir -p "$SITE/igra"

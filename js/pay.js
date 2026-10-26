@@ -51,7 +51,7 @@ const Pay = {
   wall() {
     return new Promise(res => {
       Voice.stop();
-      const buy = this.inTG ? `<p class="small pnote">Полную версию оформляют на сайте рахмат.рус. Если код уже есть — введите его.</p>` :
+      const buy = this.inTG ? `<p class="small pnote">Полную версию оформляют на сайте razumus.ru. Если код уже есть — введите его.</p>` :
         `<div class="plans"><button class="plan main" data-p="year"><b>${PRICES.year.toLocaleString("ru-RU")} ₽ в год</b><small>≈${Math.round(PRICES.year / 12)} ₽ в месяц · выгоднее на 40%</small></button>` +
         `<button class="plan" data-p="month"><b>${PRICES.month} ₽ в месяц</b><small>можно отменить в любой момент</small></button></div>`;
       const ov = sheet(`<h2>Полная версия</h2><p class="small">Для родителей</p>

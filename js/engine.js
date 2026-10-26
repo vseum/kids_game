@@ -2,7 +2,7 @@
 /* Корень игры: вторая игра (alifba/) лежит во вложенной папке и берёт озвучку и API из корня */
 const ROOT = window.GAME_ROOT || "";
 /* Тексты, которые у каждой игры свои */
-const GAME = Object.assign({ title: "Аяты вокруг нас", url: "рахмат.рус/igra", bag: "Мои сокровища", bagHint: "Сокровища даются за пройденные главы", award: "Новое сокровище в сумке" }, window.GAME_TEXT || {});
+const GAME = Object.assign({ title: "Аяты вокруг нас", url: "razumus.ru/igra", bag: "Мои сокровища", bagHint: "Сокровища даются за пройденные главы", award: "Новое сокровище в сумке" }, window.GAME_TEXT || {});
 /* ============ ОСНОВА ИГРЫ: сцена, голос, звуки, подписи, вопросы, аяты, награды ============ */
 const $ = s => document.querySelector(s);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
