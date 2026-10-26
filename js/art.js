@@ -266,6 +266,21 @@ const Art = (() => {
     coaches.add(c); return c;
   }
 
+  /* Автоподсказка для всей игры: предмет с классом .hint ждёт ребёнка, а тот 5 с ничего не нажимает —
+     прилетает рука «нажми» (жест можно задать атрибутом data-gesture="drag|hold|swipe"). Касание — рука улетает */
+  let lastInput = performance.now(), auto = null;
+  addEventListener("pointerdown", () => { lastInput = performance.now(); if (auto) { auto.remove(); auto = null; } }, true);
+  setInterval(() => {
+    if (auto && (!auto._t.isConnected || !auto._t.classList.contains("hint"))) { auto.remove(); auto = null; }
+    const st = document.getElementById("start"), startOn = st && !st.classList.contains("off") && getComputedStyle(st).display !== "none";
+    if (auto || startOn || performance.now() - lastInput < 5000 || document.querySelector(".pointer, .ayah, .sheet, .chtitle")) return;
+    const vw = innerWidth, vh = innerHeight;
+    const t = [...document.querySelectorAll("#stage .hint, #app > .hint")].find(e => { const r = e.getBoundingClientRect(); return r.width > 4 && r.bottom > 0 && r.right > 0 && r.left < vw && r.top < vh && getComputedStyle(e).visibility !== "hidden" && +getComputedStyle(e).opacity > 0.2; });
+    if (!t) return;
+    const r = t.getBoundingClientRect();
+    auto = pointer(r.left + r.width / 2, r.top + r.height / 2, t.dataset.gesture || "tap"); auto._t = t;
+  }, 700);
+
   /* Отклик касания: кольцо в точке нажатия + короткая вибрация */
   function ripple(x, y) {
     const r = el("div", "ripple", app); Object.assign(r.style, { left: x + "px", top: y + "px" });

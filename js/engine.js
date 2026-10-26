@@ -414,11 +414,41 @@ function autoNext(b, p, text) {
   autoNext.rearm = pp => { gen++; stop(); const g = gen; pp.then(() => arm(g)); };
   b.addEventListener("click", () => { live = false; stop(); autoNext.rearm = null; }, { once: true });
 }
+/* Красивые переносы: короткие слова не висят в конце строки (неразрывный пробел после них), тире не начинает строку;
+   если каждое предложение помещается в строку — каждое с новой строки (перенос по смыслу), иначе строки выравниваются (text-wrap: balance) */
+const NB = "\u00A0";
+function glue(t) {
+  return String(t)
+    .replace(/(^|[\s(«"])([А-Яа-яЁёA-Za-z]{1,3}|чтобы|когда|чем|если|тоже|даже|это|или)\s+(?=\S)/g, (m, a, w) => a + w + NB)
+    .replace(/\s+(-|—)\s+/g, NB + "$1 ")
+    .replace(/(\d)\s+(?=\S)/g, "$1" + NB);
+}
+let measureCx = null;
+function niceText(e, text) {
+  const t = glue(text), parts = [];
+  for (const x of t.split(/(?<=[.!?…»])\s+(?=[А-ЯЁA-Z«])/)) {   // «Ой!», «Правильно!» — не отдельной строкой, а вместе со следующим
+    if (parts.length && parts[parts.length - 1].replace(/[^А-Яа-яЁёA-Za-z]/g, "").length < 11 && !/[.…]$/.test(parts[parts.length - 1])) parts[parts.length - 1] += " " + x;
+    else parts.push(x);
+  }
+  e.classList.add("nicewrap");
+  if (parts.length >= 2 && parts.length <= 4 && e.clientWidth > 0) {
+    measureCx = measureCx || document.createElement("canvas").getContext("2d");
+    const cs = getComputedStyle(e); measureCx.font = `${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
+    const room = e.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 4;
+    const w = parts.map(x => measureCx.measureText(x).width), sp = measureCx.measureText(" ").width;
+    const byBlocks = w.reduce((n, x) => n + Math.ceil(x / room), 0), flow = Math.ceil((w.reduce((a, x) => a + x, 0) + sp * (w.length - 1)) / room);
+    if (byBlocks <= flow + 2) {   // каждое предложение — с новой строки, внутри — ровные строки (оценка flow обычно на строку меньше реальной)
+      e.textContent = ""; parts.forEach(x => el("span", "sent", e).textContent = x);
+      return;
+    }
+  }
+  e.textContent = t;
+}
 function showCap(id, note, named) {
   capLine = { id, named };
   cap.classList.remove("hidden");
-  capText.textContent = callName(named) + L(id); capText.classList.remove("pop"); void capText.offsetWidth; capText.classList.add("pop");
-  capNote.textContent = note || ""; capBtns.innerHTML = "";
+  niceText(capText, callName(named) + L(id)); capText.classList.remove("pop"); void capText.offsetWidth; capText.classList.add("pop");
+  niceText(capNote, note || ""); capBtns.innerHTML = "";
 }
 function hideCap() { cap.classList.add("hidden"); Voice.stop(); }
 function button(label, cls = "btn", parent = capBtns) { return el("button", cls, parent, label); }
@@ -454,14 +484,14 @@ function choice(qid, opts, okId) {
           picked = true;
           Snd.tap(); celebrate(); b.classList.add("yes"); b.disabled = true;
           btns.forEach(x => { x.onclick = null; if (x !== b) x.remove(); });
-          capNote.textContent = callName(true) + L(okId); capLine = { id: okId, named: true };
+          niceText(capNote, callName(true) + L(okId)); capLine = { id: okId, named: true };
           const p = Voice.speak(okId, true); await sleep(500);
           const nb = button("Дальше"); p.then(() => nb.classList.add("glow")); autoNext(nb, p, L(okId)); await clicked(nb);
           Voice.stop(); capBtns.innerHTML = ""; capNote.textContent = ""; res(misses);
         } else {
           misses++; Snd.thud(0.3); b.classList.add("no"); b.disabled = true;
           const nid = window.LINES[o.id + "_no"] ? o.id + "_no" : "wrong";
-          capNote.textContent = L(nid); capLine = { id: nid }; pending = Voice.speak(nid);
+          niceText(capNote, L(nid)); capLine = { id: nid }; pending = Voice.speak(nid);
         }
       };
       return b;
@@ -644,7 +674,7 @@ function conclusion(id, opt = {}) {
       `</div><div class="abtns">${opt.back ? BACK_BTN : ""}<button class="ibtn trn" data-a="say" aria-label="Послушать ещё раз">${ICO_TR}<small>Ещё раз</small></button>` +
       `<button class="btn next" data-a="next">${esc(opt.btn || "Дальше")} ${ICO_NEXT}</button></div></div>`);
     const txt = ov.querySelector(".vyvod"), bS = ov.querySelector(".trn"), bN = ov.querySelector(".next");
-    txt.textContent = callName(true) + L(id);
+    requestAnimationFrame(() => niceText(txt, callName(true) + L(id)));   // ширина известна после вставки
     requestAnimationFrame(() => requestAnimationFrame(() => ov.classList.add("on")));
     Snd.sparkle();
     let closed = false, heard = !!opt.heard;

@@ -692,3 +692,7 @@ a.chip { display: inline-block; text-decoration: none; font-size: 14px; }
 .pointer.swipe .ph { animation: ptSwipe 2s ease-in-out infinite; }
 @keyframes ptSwipe { 0%, 100% { transform: translate(-36px, 0) scale(.88); } 50% { transform: translate(36px, 0) scale(.88); } }
 @media (prefers-reduced-motion: reduce) { .pointer .ph, .pointer::after, .pointer .burst { animation: none !important; } .pointer .burst { opacity: 1; } }
+/* красивые переносы: ровные строки, без «одного слова на последней строке» */
+.nicewrap, #capText, #capNote, .concl .vyvod, .chtitle b { text-wrap: balance; }
+.acard .tr, .dalil li p { text-wrap: pretty; hyphens: manual; }
+.nicewrap .sent { display: block; text-wrap: balance; }
