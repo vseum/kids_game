@@ -31,7 +31,7 @@ async function move(e, x, y, ms, easing = "ease-in-out") {
   put(e, x, y); a.cancel();
 }
 function local(ev) { const r = stage.getBoundingClientRect(); return { x: ev.clientX - r.left, y: ev.clientY - r.top }; }
-function clearStage() { stage.innerHTML = ""; Snd.amb(null); }
+function clearStage() { stage.innerHTML = ""; stage.getAnimations().forEach(a => a.cancel()); Snd.amb(null); if (window.Art) Art.reset(); }
 async function toDark() { fadeEl.classList.add("on"); await sleep(480); }
 function fromDark() { fadeEl.classList.remove("on"); }
 
@@ -75,13 +75,13 @@ const Snd = {
     g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
     o.connect(g); g.connect(this.master); o.start(t); o.stop(t + dur + 0.05);
   },
-  tap() { this.noise({ kind: "brown", type: "lowpass", f: 900, dur: 0.07, gain: 0.25, attack: 0.004 }); },
+  tap() { this.tone({ f: 620, f2: 1040, dur: 0.07, gain: 0.08 }); this.noise({ kind: "brown", type: "lowpass", f: 900, dur: 0.06, gain: 0.16, attack: 0.003 }); },
   whoosh(g = 0.3) { this.noise({ kind: "pink", f: 300, f2: 1800, q: 0.7, dur: 0.6, gain: g, attack: 0.2 }); },
   fall() { this.noise({ kind: "pink", f: 1400, f2: 250, q: 0.7, dur: 1.0, gain: 0.18, attack: 0.2 }); },
   thud(g = 0.6) { this.noise({ kind: "brown", type: "lowpass", f: 180, dur: 0.3, gain: g, attack: 0.006 }); },
   pop() { this.noise({ type: "highpass", f: 1200, dur: 0.12, gain: 0.9, attack: 0.002 }); this.noise({ f: 700, f2: 200, dur: 0.3, gain: 0.3, attack: 0.004, at: 0.02 }); },
   splash() { for (let i = 0; i < 14; i++) this.tone({ f: rnd(500, 1800), f2: rnd(900, 3000), dur: rnd(0.02, 0.06), gain: rnd(0.05, 0.14), at: i * rnd(0.01, 0.04) }); },
-  sparkle() { for (let i = 0; i < 7; i++) this.noise({ f: 3000 + i * 600, q: 14, dur: 0.18, gain: 0.08, attack: 0.005, at: i * 0.05 }); },
+  sparkle() { for (let i = 0; i < 7; i++) this.noise({ f: 3000 + i * 600, q: 14, dur: 0.18, gain: 0.08, attack: 0.005, at: i * 0.05 }); this.noise({ kind: "pink", type: "highpass", f: 1800, f2: 7000, dur: 0.6, gain: 0.07, attack: 0.15 }); },
   chirp(at = 0) { for (let i = 0; i < 3; i++) this.tone({ f: rnd(2600, 3400), f2: rnd(3800, 4600), dur: 0.07, gain: 0.05, at: at + i * 0.11 }); },
   buzz(sec = 1, g = 0.06) {
     if (!this.ac) return;
@@ -99,6 +99,93 @@ const Snd = {
     o.connect(g); g.connect(this.master); o.start(t); o.stop(t + sec + 0.05);
     this.noise({ kind: "pink", f: 600, q: 0.6, dur: sec, gain: 0.12, attack: 0.3 });
   },
+  /* ---------- саунд-дизайн без музыки: материалы, механизмы, птицы. Всё синтезируется, без файлов ---------- */
+  /* выход с панорамой: x — координата на сцене (слева — в левом ухе) */
+  out(x) {
+    if (x === undefined || !this.ac.createStereoPanner) return this.master;
+    const p = this.ac.createStereoPanner(); p.pan.value = Math.max(-0.9, Math.min(0.9, x / size().W * 1.6 - 0.8)); p.connect(this.master); return p;
+  },
+  /* набор затухающих гармоник: удар по материалу (модальный синтез) */
+  modes(f, parts, gain, out, at = 0) {
+    const ac = this.ac, t = ac.currentTime + at;
+    parts.forEach(([k, a, d]) => {
+      const o = ac.createOscillator(), g = ac.createGain(); o.frequency.setValueAtTime(f * k * 1.03, t); o.frequency.exponentialRampToValueAtTime(f * k, t + 0.025);
+      g.gain.setValueAtTime(gain * a, t); g.gain.exponentialRampToValueAtTime(0.0001, t + d); o.connect(g); g.connect(out); o.start(t); o.stop(t + d + 0.02);
+    });
+  },
+  /* дерево: глухой «ток» — кубик, доска */
+  wood({ f = 420, gain = 0.32, x, at = 0 } = {}) {
+    if (!this.ac) return;
+    this.modes(f, [[1, 1, 0.14], [2.32, 0.45, 0.08], [4.1, 0.2, 0.05], [6.4, 0.08, 0.03]], gain, this.out(x), at);
+    this.noise({ f: f * 3, q: 1.4, dur: 0.035, gain: gain * 0.5, attack: 0.001, at });
+  },
+  /* металл: звонкий «динь-клац» — кран, крюк, гвозди */
+  metal({ f = 900, gain = 0.12, x, at = 0, ring = 1 } = {}) {
+    if (!this.ac) return;
+    this.modes(f, [[1, 1, 0.5 * ring], [2.76, 0.6, 0.32 * ring], [5.4, 0.35, 0.18 * ring], [8.93, 0.2, 0.1 * ring]], gain, this.out(x), at);
+    this.noise({ type: "highpass", f: 3000, dur: 0.02, gain: gain * 0.8, attack: 0.001, at });
+  },
+  /* цепь крюка позвякивает */
+  chain(x, n = 6) { for (let i = 0; i < n; i++) this.metal({ f: rnd(2200, 3600), gain: 0.025, x, at: i * rnd(0.025, 0.05), ring: 0.25 }); },
+  /* скрип дерева: «липкое» трение с дрожанием высоты */
+  creak(x, g = 0.07) {
+    if (!this.ac) return;
+    const ac = this.ac, t = ac.currentTime, o = ac.createOscillator(), f = ac.createBiquadFilter(), gn = ac.createGain(), l = ac.createOscillator(), lg = ac.createGain();
+    o.type = "sawtooth"; o.frequency.setValueAtTime(rnd(70, 110), t); o.frequency.linearRampToValueAtTime(rnd(120, 170), t + 0.35);
+    l.type = "square"; l.frequency.value = rnd(16, 26); lg.gain.value = g * 0.6; l.connect(lg); lg.connect(gn.gain);
+    f.type = "bandpass"; f.frequency.value = rnd(600, 900); f.Q.value = 5;
+    gn.gain.setValueAtTime(0.0001, t); gn.gain.linearRampToValueAtTime(g, t + 0.08); gn.gain.linearRampToValueAtTime(0.0001, t + 0.42);
+    o.connect(f); f.connect(gn); gn.connect(this.out(x)); o.start(t); l.start(t); o.stop(t + 0.45); l.stop(t + 0.45);
+  },
+  /* мотор (тележка крана): тихий гул, высота зависит от скорости. motor(true) / motor(false), motorSpeed(0..1) */
+  motor(on) {
+    if (!this.ac) return;
+    const ac = this.ac, t = ac.currentTime;
+    if (!on) { if (this._mot) { const m = this._mot; m.g.gain.setTargetAtTime(0.0001, t, 0.15); setTimeout(() => { try { m.o.stop(); } catch (e) {} }, 800); this._mot = null; } return; }
+    if (this._mot) return;
+    const o = ac.createOscillator(), f = ac.createBiquadFilter(), g = ac.createGain();
+    o.type = "sawtooth"; o.frequency.value = 70; f.type = "lowpass"; f.frequency.value = 380; f.Q.value = 2; g.gain.value = 0.0001; g.gain.setTargetAtTime(0.025, t, 0.3);
+    o.connect(f); f.connect(g); g.connect(this.master); o.start(); this._mot = { o, g, f };
+  },
+  motorSpeed(v) { if (!this._mot) return; const t = this.ac.currentTime; this._mot.o.frequency.setTargetAtTime(62 + 60 * v, t, 0.08); this._mot.g.gain.setTargetAtTime(0.012 + 0.03 * v, t, 0.1); },
+  /* сборка крана: лязг секций снизу вверх и жужжание */
+  craneBuild() {
+    if (!this.ac) return;
+    for (let i = 0; i < 5; i++) this.metal({ f: 520 + i * 90, gain: 0.07, x: size().W * 0.08, at: 0.12 + i * 0.16, ring: 0.6 });
+    for (let i = 0; i < 3; i++) this.metal({ f: 700 + i * 60, gain: 0.06, x: size().W * (0.3 + i * 0.25), at: 0.95 + i * 0.14, ring: 0.5 });
+    this.noise({ kind: "pink", f: 500, f2: 900, q: 2, dur: 1.4, gain: 0.05, attack: 0.3 });
+  },
+  /* крюк подхватил кубик */
+  hook(x) { this.chain(x, 5); this.metal({ f: 1500, gain: 0.06, x, at: 0.16, ring: 0.3 }); },
+  /* защёлка отпустила груз */
+  release(x) { this.metal({ f: 1900, gain: 0.07, x, ring: 0.25 }); this.noise({ kind: "pink", f: 600, f2: 1400, q: 0.8, dur: 0.3, gain: 0.08, attack: 0.05 }); },
+  /* Птицы: несколько «пород» со своим рисунком песни; pan — где поёт, far 0..1 — насколько далеко */
+  tweet(fa, fb, dur, at, gain, out, vib = 0, am = 0) {
+    const ac = this.ac, t = ac.currentTime + at, o = ac.createOscillator(), g = ac.createGain();
+    o.frequency.setValueAtTime(fa, t); o.frequency.exponentialRampToValueAtTime(fb, t + dur);
+    if (vib) { const l = ac.createOscillator(), lg = ac.createGain(); l.frequency.value = vib; lg.gain.value = fa * 0.04; l.connect(lg); lg.connect(o.frequency); l.start(t); l.stop(t + dur + 0.02); }
+    g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(gain, t + Math.min(0.02, dur / 3)); g.gain.setValueAtTime(gain, t + dur * 0.7); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    if (am) { const l = ac.createOscillator(), lg = ac.createGain(), mg = ac.createGain(); l.type = "square"; l.frequency.value = am; lg.gain.value = 0.5; mg.gain.value = 0.5; l.connect(lg); lg.connect(mg.gain); o.connect(mg); mg.connect(g); l.start(t); l.stop(t + dur + 0.02); }
+    else o.connect(g);
+    g.connect(out); o.start(t); o.stop(t + dur + 0.03);
+  },
+  bird(kind = Math.floor(Math.random() * 3), pan = rnd(-0.85, 0.85), far = rnd(0.2, 0.8)) {
+    if (!this.ac) return;
+    const ac = this.ac, lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = 9000 - far * 5000;
+    let out = this.master; if (ac.createStereoPanner) { const p = ac.createStereoPanner(); p.pan.value = pan; lp.connect(p); p.connect(this.master); } else lp.connect(out);
+    const G = 0.05 * (1 - far * 0.65); let t = 0;
+    if (kind === 0) {   // зарянка: россыпь чистых свистов вверх-вниз
+      const n = 4 + Math.floor(rnd(0, 4)), base = rnd(2400, 3400);
+      for (let i = 0; i < n; i++) { const a = base * rnd(0.8, 1.35), b = a * rnd(0.75, 1.3), d = rnd(0.06, 0.16); this.tweet(a, b, d, t, G * rnd(0.6, 1), lp, rnd(0, 1) < 0.4 ? rnd(30, 60) : 0); t += d + rnd(0.03, 0.09); }
+    } else if (kind === 1) {   // синица: «ти-тю, ти-тю, ти-тю»
+      const hi = rnd(4800, 5600), lo = hi * rnd(0.62, 0.72), n = 2 + Math.floor(rnd(0, 3));
+      for (let i = 0; i < n; i++) { this.tweet(hi, hi * 0.95, 0.08, t, G, lp); this.tweet(lo, lo * 0.97, 0.12, t + 0.1, G * 0.85, lp); t += 0.34; }
+    } else {   // зяблик: трель с ускорением и росчерк в конце
+      const f = rnd(3200, 4200); this.tweet(f, f * 1.12, 0.7, 0, G * 0.8, lp, 0, rnd(20, 28)); this.tweet(f * 1.2, f * 0.7, 0.18, 0.75, G, lp);
+    }
+  },
+  /* шелест листвы: мягкий порыв высокого шума */
+  rustle(g = 0.035) { this.noise({ kind: "pink", type: "highpass", f: 2500, f2: 3800, dur: rnd(1.4, 2.6), gain: g, attack: 0.6 }); },
   /* фон сцены: "wind" ветер, "sea" волны, "meadow" ветерок и птицы; null - тишина */
   amb(kind, level = 1) {
     if (!this.ac) return;
@@ -117,7 +204,15 @@ const Snd = {
     };
     if (kind === "wind" || kind === "meadow") layer("brown", "lowpass", 400, 0.7, 0.18, 0.07, 0.08);
     if (kind === "sea") { layer("pink", "lowpass", 700, 0.5, 0.16, 0.13, 0.12); layer("brown", "lowpass", 250, 0.7, 0.2, 0.09, 0.1); }
-    if (kind === "meadow") { const tw = () => { this.chirp(); this.ambTimer = setTimeout(tw, rnd(2500, 6000)); }; this.ambTimer = setTimeout(tw, 1500); }
+    if (kind === "meadow") {   // птицы поют с разных сторон, иногда отвечают друг другу; шелест листвы
+      const tw = () => {
+        const k = Math.floor(rnd(0, 3)), pan = rnd(-0.85, 0.85); this.bird(k, pan, rnd(0.2, 0.85));
+        if (Math.random() < 0.35) setTimeout(() => this.bird(k, -pan * rnd(0.6, 1), rnd(0.4, 0.9)), rnd(900, 1800));
+        if (Math.random() < 0.3) this.rustle();
+        this.ambTimer = setTimeout(tw, rnd(2200, 5200));
+      };
+      this.ambTimer = setTimeout(tw, 1200);
+    }
   },
   /* сильный порыв ветра */
   gust(sec = 3) { this.noise({ kind: "pink", f: 300, f2: 1100, q: 0.5, dur: sec, gain: 0.35, attack: sec * 0.35 }); },
@@ -598,13 +693,20 @@ function chapterPlace(id = CUR) {
   return wi < 0 ? "" : `Уровень ${wi + 1} · Глава ${WORLDS[wi].ch.indexOf(id) + 1}`;
 }
 /* Заставка главы. Первый параметр оставлен для совместимости и не используется */
+/* Заставка главы — моушн: розетка-гирих прорисовывается золотыми линиями, слова названия всплывают по очереди,
+   орнамент растягивается от центра; уходит вверх с размытием */
+const ROSETTE = (() => {   // восьмиконечная звезда из двух квадратов и круги — классический гирих
+  const sq = a => { const p = [0, 1, 2, 3].map(i => { const t = a + i * Math.PI / 2; return `${(100 + 78 * Math.cos(t)).toFixed(1)} ${(100 + 78 * Math.sin(t)).toFixed(1)}`; }); return `<path pathLength="1" d="M${p.join(" L")}Z"/>`; };
+  return `<svg class="rosette" viewBox="0 0 200 200" aria-hidden="true"><g fill="none" stroke="#F5C451" stroke-width="1.1">${sq(Math.PI / 4)}${sq(0)}<circle pathLength="1" cx="100" cy="100" r="96"/><circle pathLength="1" cx="100" cy="100" r="40"/><circle pathLength="1" cx="100" cy="100" r="58" stroke-dasharray=".01 .02"/></g></svg>`;
+})();
 async function chapterTitle(_, name, lineId) {
   hideCap();
-  const t = el("div", "chtitle", app, `<div><small>${chapterPlace()}</small><b>${name}</b><svg class="orn" viewBox="0 0 120 16" aria-hidden="true"><path d="M0 8h44M76 8h44" stroke="#F5C451" stroke-width="1.5"/><path d="M60 1l4 7-4 7-4-7z" fill="#F5C451"/><circle cx="50" cy="8" r="2" fill="#F5C451"/><circle cx="70" cy="8" r="2" fill="#F5C451"/></svg></div>`);
+  const words = name.split(" ").map((w, i) => `<span style="--i:${i}">${w}</span>`).join(" ");
+  const t = el("div", "chtitle", app, `<div class="ct">${ROSETTE}<small>${chapterPlace()}</small><b>${words}</b><svg class="orn" viewBox="0 0 120 16" aria-hidden="true"><path class="ol" pathLength="1" d="M56 8H0M64 8h56" stroke="#F5C451" stroke-width="1.5"/><path class="od" d="M60 1l4 7-4 7-4-7z" fill="#F5C451"/><circle class="oc" cx="50" cy="8" r="2" fill="#F5C451"/><circle class="oc" cx="70" cy="8" r="2" fill="#F5C451"/></svg></div>`);
   requestAnimationFrame(() => requestAnimationFrame(() => t.classList.add("on")));
   Snd.sparkle();
-  await Promise.all([Voice.speak(lineId), sleep(2200)]);
-  t.classList.remove("on"); await sleep(600); t.remove();
+  await Promise.all([Voice.speak(lineId), sleep(2400)]);
+  t.classList.add("out"); await sleep(650); t.remove();
 }
 
 /* Стили главы прямо из её файла (чтобы миры не правили общий style.css) */
@@ -626,6 +728,13 @@ const tapOnce = (e, onTap, timeout) => taps(e, 1, onTap, timeout);
 /* ============ ПРАЗДНИК, НАГРАДЫ, СОХРАНЕНИЕ ============ */
 function celebrate() {
   const { W, H } = size(); Snd.sparkle();
+  if (window.Art) {   // волна света и золотые звёздочки (js/art.js)
+    Art.glow(W / 2, H * 0.45, Math.min(W, H) * 0.9);
+    Art.burst(W / 2, H * 0.45, { n: 46, speed: 9, g: 0.16, life: 1.4, size: 7, up: 2 });
+    Art.burst(W / 2, H * 0.45, { n: 18, kind: "chip", colors: ["#F5C451", "#FFFFFF", "#7FD0E8", "#9ED36A"], speed: 7, g: 0.2, life: 1.6, size: 5, up: 3 });
+    if (navigator.vibrate) try { navigator.vibrate([12, 40, 12]); } catch (e) {}
+    return;
+  }
   for (let i = 0; i < 26; i++) {
     const s = el("i", "spark", app); s.style.left = W / 2 + "px"; s.style.top = H * 0.45 + "px";
     s.style.background = ["#FFD54F", "#FF8A65", "#FFFFFF", "#6BBF59"][i % 4];

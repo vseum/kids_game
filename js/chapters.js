@@ -388,101 +388,203 @@ function seaLayer(seaTop, pal) {
   return sea;
 }
 
-/* ============ ГЛАВА 1: НЕБО БЕЗ ОПОР ============ */
+/* ============ ГЛАВА 1: НЕБО БЕЗ ОПОР — эталон графики (свет, планы, живой слой, отклик: js/art.js) ============ */
+/* Деревянные кубики с буквами алфавита: краска, светлая фаска сверху, тень снизу, бок к солнцу светлее */
+const SKY_PAINT = [["#F9CF63", "#E09E2C"], ["#F18E62", "#CC5F3A"], ["#70BCDB", "#4690B3"], ["#8BCB72", "#5B9F4B"], ["#C39BE0", "#9469BC"], ["#F6AA78", "#D57C4A"], ["#6BCBB6", "#3FA18D"]];
+const SKY_LETTERS = ["أ", "ب", "ت", "ث", "ج", "ح", "خ", "د", "ذ"];
+function blockSVG(i) {
+  const [a, b] = SKY_PAINT[i % SKY_PAINT.length], g = "bk" + i + "x" + Math.floor(Math.random() * 1e6), r = Art.light.x > size().W / 2;
+  return `<svg viewBox="0 0 100 36" aria-hidden="true"><defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${a}"/><stop offset="1" stop-color="${b}"/></linearGradient></defs>
+    <rect x="1.5" y="2.5" width="100" height="36" rx="5" fill="#1E2A1E" opacity=".18"/><rect width="100" height="36" rx="5" fill="url(#${g})"/>
+    <path d="M6 12 Q30 9 52 12 T96 11 M4 25 Q34 22 60 25 T97 24" stroke="${b}" stroke-width="1" fill="none" opacity=".45"/>
+    <rect x="2" y="1.4" width="96" height="5.5" rx="2.7" fill="#fff" opacity=".42"/>
+    <rect y="29.5" width="100" height="6.5" rx="4" fill="#3B2A10" opacity=".16"/>
+    <rect x="${r ? 93 : 0}" width="7" height="36" rx="4" fill="#fff" opacity=".2"/><rect x="${r ? 0 : 93}" width="7" height="36" rx="4" fill="#2A1C08" opacity=".12"/>
+    <circle cx="50" cy="18" r="13" fill="#FFF8E6" opacity=".88"/><circle cx="50" cy="18.6" r="13" fill="none" stroke="${b}" stroke-width="1.2" opacity=".5"/>
+    <text x="50" y="26.5" text-anchor="middle" font-family="Amiri, serif" font-size="22" font-weight="700" fill="${b}" stroke="#3A260C" stroke-width=".5" stroke-opacity=".35">${SKY_LETTERS[i % SKY_LETTERS.length]}</text></svg>`;
+}
+/* Башенный кран: решётчатая мачта и стрела, кабина со стеклом, противовес, оттяжки. Всё освещено со стороны солнца */
+function craneSVG(W, H, mx, jibY, groundY) {
+  const mw = Math.max(22, Math.min(36, W * 0.024)), jh = mw * 0.8, xL = mx - Math.min(W * 0.12, 150), xR = W * 0.97, apex = mw * 2.6;
+  const lat = (x0, y0, x1, y1, n, vertical) => { let d = ""; for (let i = 0; i < n; i++) { const t0 = i / n, t1 = (i + 1) / n; d += vertical ? `M${x0} ${y0 + (y1 - y0) * t0} L${x1} ${y0 + (y1 - y0) * t1} M${x0} ${y0 + (y1 - y0) * t1} L${x1} ${y0 + (y1 - y0) * t1} ` : `M${x0 + (x1 - x0) * t0} ${y1} L${x0 + (x1 - x0) * (t0 + t1) / 2} ${y0} L${x0 + (x1 - x0) * t1} ${y1} `; } return d; };
+  const mastN = Math.max(6, Math.round((groundY - jibY) / mw)), jibN = Math.max(12, Math.round((xR - xL) / (jh * 1.4)));
+  const Y1 = "#F7C04A", Y2 = "#D69427", ST = "#3F4B53";
+  return `<svg viewBox="0 0 ${W} ${H}" aria-hidden="true"><defs>
+      <linearGradient id="crG" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="${Y2}"/><stop offset="1" stop-color="${Y1}"/></linearGradient>
+      <linearGradient id="crGl" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#BFE3F5"/><stop offset=".5" stop-color="#7FB8D8"/><stop offset="1" stop-color="#4F8DB3"/></linearGradient></defs>
+    <path d="M${mx} ${jibY - jh - apex} L${xR - 6} ${jibY - jh} M${mx} ${jibY - jh - apex} L${xL + 8} ${jibY - jh}" stroke="${ST}" stroke-width="1.4" opacity=".75"/>
+    <g fill="none" stroke="url(#crG)" stroke-width="2.4" stroke-linecap="round">
+      <path d="${lat(mx - mw / 2, jibY, mx + mw / 2, groundY - 6, mastN, true)}"/>
+      <path d="${lat(xL, jibY - jh, xR, jibY, jibN, false)}"/>
+      <path d="M${mx - mw / 2} ${jibY - jh} L${mx} ${jibY - jh - apex} L${mx + mw / 2} ${jibY - jh}"/></g>
+    <rect x="${mx - mw / 2 - 2}" y="${jibY}" width="5" height="${groundY - jibY - 4}" rx="2" fill="${Y2}"/><rect x="${mx + mw / 2 - 3}" y="${jibY}" width="5" height="${groundY - jibY - 4}" rx="2" fill="${Y1}"/>
+    <rect x="${xL}" y="${jibY - jh - 2.5}" width="${xR - xL}" height="5" rx="2.5" fill="${Y1}"/><rect x="${xL}" y="${jibY - 2.5}" width="${xR - xL}" height="5" rx="2.5" fill="${Y2}"/>
+    <rect x="${xL}" y="${jibY - jh - 2.5}" width="${xR - xL}" height="1.6" rx=".8" fill="#FFF0C2" opacity=".9"/>
+    <g><rect x="${xL + 4}" y="${jibY + 3}" width="${mw * 1.6}" height="${mw * 1.1}" rx="3" fill="#A9B1B6"/><rect x="${xL + 4}" y="${jibY + 3 + mw * 0.55}" width="${mw * 1.6}" height="2" fill="#8C959B"/><rect x="${xL + 4}" y="${jibY + 3}" width="${mw * 1.6}" height="3" rx="1.5" fill="#D6DCE0"/></g>
+    <g><rect x="${mx + mw / 2 + 2}" y="${jibY + 3}" width="${mw * 1.5}" height="${mw * 1.25}" rx="4" fill="url(#crG)"/>
+      <rect x="${mx + mw / 2 + 2 + mw * 0.22}" y="${jibY + 3 + mw * 0.2}" width="${mw * 1.06}" height="${mw * 0.62}" rx="2.5" fill="url(#crGl)"/>
+      <path d="M${mx + mw / 2 + 2 + mw * 0.32} ${jibY + 3 + mw * 0.76} L${mx + mw / 2 + 2 + mw * 0.7} ${jibY + 3 + mw * 0.24}" stroke="#fff" stroke-width="1.6" opacity=".7"/></g>
+    <path d="M${mx - mw * 1.3} ${groundY + 4} L${mx - mw * 0.9} ${groundY - 8} L${mx + mw * 0.9} ${groundY - 8} L${mx + mw * 1.3} ${groundY + 4}Z" fill="#B8B2A6"/><path d="M${mx - mw * 0.9} ${groundY - 8} L${mx + mw * 0.9} ${groundY - 8} L${mx + mw * 0.84} ${groundY - 5} L${mx - mw * 0.84} ${groundY - 5}Z" fill="#D9D3C6"/>
+  </svg>`;
+}
+/* Тележка на стреле с тросом и крюком: x — где висит кубик */
+function trolleySVG(cable) {
+  return `<svg viewBox="0 0 44 ${cable + 18}" width="44" height="${cable + 18}" aria-hidden="true">
+    <rect x="9" y="0" width="26" height="9" rx="2.5" fill="#46535B"/><rect x="9" y="0" width="26" height="2.5" rx="1.2" fill="#76858E"/><circle cx="14" cy="10" r="2.6" fill="#2D363C"/><circle cx="30" cy="10" r="2.6" fill="#2D363C"/>
+    <path d="M20.5 10 V${cable - 4} M23.5 10 V${cable - 4}" stroke="#3A454C" stroke-width="1.4"/>
+    <rect x="15" y="${cable - 6}" width="14" height="8" rx="3" fill="#E3A531"/><rect x="15" y="${cable - 6}" width="14" height="2.4" rx="1.2" fill="#FFE3A0"/>
+    <path d="M22 ${cable + 2} V${cable + 6} M22 ${cable + 6} L4 ${cable + 17} M22 ${cable + 6} L40 ${cable + 17}" stroke="#3A454C" stroke-width="1.4" fill="none"/></svg>`;
+}
 /* Башня из кубиков: кран раскачивает кубик, нажатие — кубик падает на башню. Башня шатается и рушится */
-function towerGame(groundY) {
+function towerGame(groundY, near) {
   const { W, H } = size();
-  const bw = Math.min(W * 0.3, 120), bh = Math.round(bw * 0.36), craneY = H * 0.47;
-  const rail = el("div", "rail"); rail.style.top = (craneY - bh / 2 - 34) + "px";
-  const rope = el("div", "crope"); rope.style.top = (craneY - bh / 2 - 30) + "px";
-  const colors = ["#F5C451", "#E8754F", "#5BA9C9", "#7DC46D", "#B98AD8", "#F59A6B", "#5BC3B0"];
-  const placed = []; let cur = null, topX = W / 2, topY = groundY, drops = 0, busy = false, stop = false, amp = 1;
+  const bw = Math.min(W * 0.3, 130, H * 0.17), bh = Math.round(bw * 0.36), craneY = H * 0.53;   // стрела ниже облака-цели
+  const cable = Math.round(Math.max(40, Math.min(70, H * 0.075))), jibY = craneY - bh / 2 - cable + 2, mx = Math.max(40, W * 0.065);
+  const crane = el("div", "crane", near, craneSVG(W, H, mx, jibY, groundY));
+  const mastK = Math.min(0.95, (mx + 60) / W);   // доля ширины, где мачта с кабиной
+  if (!Art.reduced) crane.animate([{ clipPath: "inset(100% 0 0 0)" }, { clipPath: `inset(0 ${((1 - mastK) * 100).toFixed(1)}% 0 0)`, offset: 0.55 }, { clipPath: "inset(0 0 0 0)" }], { duration: 1500, easing: "cubic-bezier(.5,0,.3,1)" });
+  Snd.craneBuild(); setTimeout(() => Snd.motor(true), 1500);
+  const trolley = el("div", "trolley", stage, trolleySVG(cable)); Object.assign(trolley.style, { top: (jibY + 1) + "px", width: "44px", height: (cable + 18) + "px", zIndex: 5 });
+  Art.fall(trolley, 1300, -30, 700);
+  const placed = []; let cur = null, topX = W / 2, topY = groundY, drops = 0, busy = false, stop = false, amp = 1, baseShadow = null;
   const t0 = performance.now();
-  const newBlock = () => { cur = obj("block", `<div class="blk" style="background:${colors[drops % colors.length]}"></div>`, W / 2, craneY, bw, bh); cur.style.zIndex = 6; };
-  newBlock();
+  const newBlock = (delay = 0) => { cur = obj("block2", blockSVG(drops), W / 2, craneY, bw, bh); cur.style.zIndex = 6; cur.animate([{ opacity: 0, scale: ".6", translate: "-50% -80%" }, { opacity: 1, scale: "1", translate: "-50% -50%" }], { duration: 420, delay, easing: "cubic-bezier(.2,1.5,.4,1)", fill: "backwards" }); setTimeout(() => Snd.hook(W / 2), delay); };
+  newBlock(1700);
   const loop = t => {
     if (stop) return;
-    if (cur && !busy) { const x = W / 2 + W * 0.3 * Math.sin((t - t0) / 700); put(cur, x, craneY); rope.style.left = x + "px"; }
+    if (cur && !busy) { const x = W / 2 + W * 0.3 * Math.sin((t - t0) / 700); put(cur, x, craneY); trolley.style.left = x + "px"; cur.style.rotate = (Math.cos((t - t0) / 700) * -2.5).toFixed(2) + "deg"; Snd.motorSpeed(Math.abs(Math.cos((t - t0) / 700))); }
+    if (amp > 5 && t - (loop.cr || 0) > rnd(1400, 2600)) { loop.cr = t; Snd.creak(topX, Math.min(0.12, 0.03 + amp * 0.006)); }
+    if (cur && !busy) {
+      const on = placed.length > 0 && Math.abs(cur._x - topX) < bw * 0.3;
+      Object.assign(guide.style, { left: cur._x + "px", top: (craneY + bh / 2) + "px", height: Math.max(0, topY - craneY - bh / 2) + "px", opacity: t - t0 > 1800 ? "1" : "0" });
+      if (on !== guide._on) { guide._on = on; guide.classList.toggle("on", on); }
+    } else guide.style.opacity = "0";
     placed.forEach((b, i) => { const k = (i + 1) / placed.length, s = Math.sin(t / 240); b.style.transform = `translateX(${(amp * k * s).toFixed(1)}px) rotate(${(amp * 0.12 * k * s).toFixed(2)}deg)`; });
     requestAnimationFrame(loop);
   };
   requestAnimationFrame(loop);
   const field = el("div", "tapfield"); field.style.zIndex = 7;
+  const guide = el("div", "dropguide"); guide.style.zIndex = 5; guide.style.opacity = "0";
+  const dust = (x, y, n = 14, sp = 3) => Art.burst(x, y, { kind: "dust", colors: ["#EFE6D2", "#D9CBAA", "#FFFFFF"], n, speed: sp, g: -0.015, life: 0.9, size: 8, alpha: 0.7 });
   return new Promise(res => {
     let autoT = null;
     const arm = () => { clearTimeout(autoT); autoT = setTimeout(drop, 5000); };
-    async function drop() {
+    async function drop(ev) {
+      if (ev && ev.clientX !== undefined) Art.ripple(ev.clientX, ev.clientY);
       if (busy || !cur) return; busy = true; clearTimeout(autoT);
       const b = cur; cur = null; const landY = topY - bh / 2;
-      Snd.whoosh(0.1);
+      b.style.rotate = "0deg"; Snd.release(b._x);
       await move(b, b._x, landY, 380, "ease-in");
       const dx = b._x - topX;
       if (placed.length && Math.abs(dx) > bw * 0.75) {
-        Snd.thud(0.3);
+        Snd.wood({ f: 520, gain: 0.25, x: b._x }); Snd.thud(0.2);
         b.animate([{ rotate: "0deg" }, { rotate: (dx > 0 ? 70 : -70) + "deg" }], { duration: 450, fill: "forwards" });
-        await move(b, b._x + Math.sign(dx) * 50, groundY - bh / 2, 450, "ease-in"); fadeOut(b, 600);
+        await move(b, b._x + Math.sign(dx) * 50, groundY - bh / 2, 450, "ease-in"); dust(b._x, groundY, 10, 2.5); Snd.wood({ f: 300, gain: 0.3, x: b._x }); Snd.thud(0.35); fadeOut(b, 600);
       } else {
-        Snd.thud(0.6); placed.push(b); topX = b._x; topY = landY - bh / 2;
+        const perfect = placed.length > 0 && Math.abs(dx) < bw * 0.15;
+        placed.push(b); Snd.wood({ f: 360 + placed.length * 45, gain: 0.38, x: b._x }); Snd.thud(placed.length === 1 ? 0.45 : 0.25); topX = b._x; topY = landY - bh / 2;
+        if (perfect) { Art.burst(b._x, landY, { n: 24, speed: 5, g: 0.1, life: 1, size: 6, up: 2 }); Snd.metal({ f: 1760, gain: 0.07, x: b._x, ring: 0.8 }); Snd.sparkle(); }
         amp = 1 + placed.length * 1.6 + Math.abs(dx) * 0.08;
+        dust(b._x, landY + bh / 2, placed.length === 1 ? 16 : 10, 2.6); Art.shake(placed.length === 1 ? 3 : 2);
+        b.animate([{ scale: "1.08 .86" }, { scale: ".97 1.04" }, { scale: "1 1" }], { duration: 260, easing: "ease-out" });
+        if (!baseShadow) baseShadow = Art.shadow(near, b._x, groundY, bw * 1.25);
       }
       drops++;
       if (placed.length >= 6 || drops >= 9) return collapse();
       newBlock(); busy = false; arm();
     }
     async function collapse() {
-      clearTimeout(autoT); field.remove(); fadeOut(rope); fadeOut(rail);
-      amp *= 2.2; Snd.noise({ kind: "brown", type: "lowpass", f: 400, dur: 1.2, gain: 0.35, attack: 0.3 });
+      clearTimeout(autoT); field.remove(); guide.remove(); fadeOut(trolley); fadeOut(crane, 900); Snd.motor(false);
+      amp *= 2.2; Snd.noise({ kind: "brown", type: "lowpass", f: 400, dur: 1.2, gain: 0.35, attack: 0.3 }); Snd.creak(topX, 0.13); setTimeout(() => Snd.creak(topX, 0.15), 500);
       await sleep(1300); stop = true;
       const n = placed.length, dir = Math.random() < 0.5 ? -1 : 1;
       placed.slice().reverse().forEach((b, j) => {
         const i = n - 1 - j;
         b.animate([{ rotate: "0deg" }, { rotate: (dir * rnd(40, 110)) + "deg" }], { duration: 650 + j * 60, fill: "forwards", easing: "ease-in" });
-        move(b, b._x + dir * (i * bw * 0.45 + rnd(0, 20)), groundY - bh / 2, 650 + j * 60, "ease-in").then(() => Snd.thud(0.4));
+        move(b, b._x + dir * (i * bw * 0.45 + rnd(0, 20)), groundY - bh / 2, 650 + j * 60, "ease-in").then(() => { Snd.wood({ f: rnd(260, 420), gain: 0.32, x: b._x }); Snd.thud(0.3); dust(b._x, groundY, 12, 3.5); });
       });
-      await sleep(1300); res(placed);
+      setTimeout(() => Art.shake(6, 420), 700);
+      await sleep(1300); if (baseShadow) fadeOut(baseShadow, 600); res(placed);
     }
-    field.addEventListener("pointerdown", drop); arm();
+    setTimeout(() => { field.addEventListener("pointerdown", drop); arm(); }, 1800);   // кран собирается — пока не роняем
   });
 }
-/* Доска: поднять пальцем и отпустить в воздухе — падает */
-function plankDrop(groundY) {
-  const { W, H } = size();
-  const pl = obj("roof", ART.roof, W * 0.5, groundY - 16, W * 0.45, 28); pl.style.zIndex = 8; fadeIn(pl);
+/* Доска: поднять пальцем и отпустить в воздухе — падает. Тень на земле следит за высотой */
+function plankSVG(w) {
+  const g = "pk" + Math.floor(Math.random() * 1e6);
+  return `<svg viewBox="0 0 ${w} 28" aria-hidden="true"><defs><linearGradient id="${g}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D79A5E"/><stop offset=".55" stop-color="#B9773F"/><stop offset="1" stop-color="#8E5A2E"/></linearGradient></defs>
+    <rect width="${w}" height="28" rx="6" fill="url(#${g})"/><rect x="3" y="2" width="${w - 6}" height="4" rx="2" fill="#FFE2B8" opacity=".5"/>
+    <path d="M10 11 Q${w * 0.3} 7 ${w * 0.55} 11 T${w - 10} 10 M14 18 Q${w * 0.35} 22 ${w * 0.6} 18 T${w - 14} 19" stroke="#7A4A22" stroke-width="1.2" fill="none" opacity=".45"/>
+    <ellipse cx="${w * 0.22}" cy="14" rx="7" ry="3.2" fill="none" stroke="#7A4A22" stroke-width="1.1" opacity=".4"/>
+    <rect x="0" width="8" height="28" rx="5" fill="#6E4120" opacity=".35"/><rect x="${w - 8}" width="8" height="28" rx="5" fill="#6E4120" opacity=".35"/>
+    <rect x="${w * 0.08}" y="11" width="5" height="5" rx="2.5" fill="#8C959B"/><rect x="${w * 0.92 - 5}" y="11" width="5" height="5" rx="2.5" fill="#8C959B"/></svg>`;
+}
+function plankDrop(groundY, near) {
+  const { W, H } = size(), pw = W * 0.45;
+  const pl = obj("plank2", plankSVG(pw), W * 0.5, groundY - 16, pw, 28); pl.style.zIndex = 8; fadeIn(pl);
+  const sh = Art.shadow(near, pl._x, groundY + 4, pw * 0.9);
+  let live = true; const follow = () => { if (!live) return; sh.set(pl._x, Math.max(0, groundY - 16 - pl._y)); requestAnimationFrame(follow); }; follow();
   return new Promise(res => {
     let off = null, fin = false;
     pl.classList.add("hint", "tapme");
     const mv = ev => { if (!off || fin) return; const p = local(ev); put(pl, p.x + off.x, Math.min(groundY - 16, p.y + off.y)); };
-    const finish = async () => { fin = true; window.removeEventListener("pointermove", mv); window.removeEventListener("pointerup", up); pl.classList.remove("hint", "tapme"); await flight(pl, groundY - 16, 0); pl.style.transform = "rotate(0deg)"; res(pl); };
+    const finish = async () => {
+      fin = true; window.removeEventListener("pointermove", mv); window.removeEventListener("pointerup", up); pl.classList.remove("hint", "tapme");
+      await flight(pl, groundY - 16, 0); pl.style.transform = "rotate(0deg)";
+      Art.burst(pl._x, groundY, { kind: "dust", colors: ["#EFE6D2", "#D9CBAA", "#FFFFFF"], n: 22, speed: 4, g: -0.015, life: 1, size: 9, alpha: 0.7 }); Art.shake(4);
+      Snd.wood({ f: 210, gain: 0.45, x: pl._x }); Snd.wood({ f: 260, gain: 0.22, x: pl._x, at: 0.12 }); Snd.metal({ f: 2600, gain: 0.03, x: pl._x, at: 0.05, ring: 0.3 });
+      live = false; sh.set(pl._x, 0); pl._shadow = sh; res(pl);
+    };
     const up = () => { if (!off || fin) return; off = null; if (pl._y < groundY - 90) finish(); else pl.classList.add("hint"); };
-    pl.onpointerdown = ev => { ev.preventDefault(); const p = local(ev); off = { x: pl._x - p.x, y: pl._y - p.y }; pl.classList.remove("hint"); Snd.tap(); };
+    pl.onpointerdown = ev => { ev.preventDefault(); const p = local(ev); off = { x: pl._x - p.x, y: pl._y - p.y }; pl.classList.remove("hint"); Snd.wood({ f: 520, gain: 0.18, x: pl._x }); Art.ripple(ev.clientX, ev.clientY); };
     window.addEventListener("pointermove", mv); window.addEventListener("pointerup", up);
     setTimeout(async () => { if (fin) return; fin = true; await move(pl, pl._x, H * 0.5, 900, "ease-out"); await sleep(300); fin = false; finish(); }, 18000);
   });
 }
 async function chSky() {
   await toDark(); clearStage();
-  const sk = sky("linear-gradient(180deg,#4FA8E0 0%,#9AD5F2 55%,#E6F6FC 100%)");
-  const { W, H } = size(); sunAt(W * 0.84, H * 0.38, 120); clouds(2, 0.3, 0.4); hills(0.22); vignette();
-  const groundY = H * 0.9;
-  const goal = obj("bigcloud", ART.cloud, W * 0.5, H * 0.3, 160, 80); goal.style.zIndex = 3; goal.style.opacity = ".95";
-  Snd.amb("wind"); fromDark(); await sleep(300);
+  const { W, H } = size(), port = H > W, groundY = H * 0.9;
+  /* планы глубины: небо, солнце, дальние горы и облака, холмы с деревьями и облако-цель, луг с краном */
+  const pSky = Art.plane(0, 0), pSun = Art.plane(0.04, 1), pFar = Art.plane(0.12, 2), pMid = Art.plane(0.3, 3), pNear = Art.plane(1, 4);
+  const sunX = W * (port ? 0.82 : 0.85), sunY = port ? H * 0.31 : H * 0.25;
+  Art.light.x = sunX; Art.light.y = sunY;
+  Art.sky(pSky, ["#2B80CB", "#7DC1EC", "#DDEFF7"]);
+  const deep = el("div", "skydeep", pSky); deep.style.background = "radial-gradient(120% 60% at 85% 100%, rgba(255,236,196,.5), transparent 60%), linear-gradient(180deg,#155CA8 0%,#4E9FDD 48%,#CBE6F4 100%)";
+  const sun = Art.sun(pSun, sunX, sunY, Math.min(W, H) * 0.07);
+  [[0.1, 0.24, 0.12, 21], [0.34, 0.17, 0.09, 22], [0.62, 0.3, 0.11, 23], [0.9, 0.16, 0.08, 24]].forEach(([x, y, w, sd]) => Art.cloud(pFar, W * x, H * y, Math.max(80, W * w), { seed: sd, depth: 0.25 }));
+  Art.rise(Art.range(pFar, { top: 0.5, bottom: 0.82, color: ["#94B1CF", "#C8DAEA"], peaks: port ? 2 : 4, seed: 7, snow: true }), 200, 50, 1800);
+  Art.rise(Art.range(pMid, { top: 0.68, bottom: 0.93, color: ["#7FB873", "#AED6A0"], peaks: port ? 2 : 4, seed: 12, round: true, rim: "#FFF3C8" }), 400, 40, 1600);
+  const trees = Art.trees(pMid, [[0.05, 0.86, 54, "o"], [0.12, 0.84, 70, "c"], [0.17, 0.865, 44, "o"], [0.75, 0.855, 50, "o"], [0.81, 0.84, 74, "c"], [0.87, 0.85, 58, "o"], [0.94, 0.835, 66, "c"]]
+    .filter((_, i) => !port || i % 2 === 0).map(([x, y, h, k]) => [W * x, H * y, h * Math.min(1.3, Math.max(0.8, H / 800)), k]));
+  trees.forEach((t, i) => Art.pop(t, 900 + i * 90));
+  const cw = Math.max(180, Math.min(W * 0.21, 300));
+  const goal = Art.fall(Art.cloud(pMid, W * 0.5, Math.max(H * 0.28, 230), cw, { seed: 4, depth: 1, drift: false }), 600, -50, 1600);
+  goal.animate([{ translate: "-50% -50%" }, { translate: "-50% calc(-50% - 7px)" }], { duration: 4200, direction: "alternate", iterations: Infinity, easing: "ease-in-out" });
+  Art.meadow(pNear, groundY - H * 0.075, { seed: 9 });
+  Art.cloudShadows(pNear, groundY - H * 0.06, groundY + H * 0.04, 2);
+  Art.frame(pNear);
+  el("div", "vignette2"); el("div", "filmgrain");
+  Art.pollen(30);
+  Snd.amb("meadow"); fromDark(); Art.enter(); Art.autoQuality(); await sleep(300);
   await chapterTitle(1, "Небо без опор", "k0");
   await say("k1");
 
   cue("k2");
-  const blocks = await towerGame(groundY);
+  const blocks = await towerGame(groundY, pNear);
   await say("k3");
   blocks.forEach(b => fadeOut(b, 500));
 
   cue("k4");
-  const plank = await plankDrop(groundY);
+  const plank = await plankDrop(groundY, pNear);
   await say("k5");
-  fadeOut(plank);
+  fadeOut(plank); if (plank._shadow) fadeOut(plank._shadow);
 
-  /* огромное небо без опор */
-  sk.style.transition = "background 2s"; sk.style.background = "linear-gradient(180deg,#2E86C9 0%,#7CC6EE 55%,#E6F6FC 100%)";
-  goal.animate([{ transform: "translateY(0)" }, { transform: "translateY(-30px)" }], { duration: 2000, fill: "forwards", easing: "ease-out" });
-  Snd.gust(3);
+  /* огромное небо без опор: камера поднимается, небо глубже, солнце ярче, облако плывёт выше */
+  deep.style.opacity = "1"; sun.brighten(1.35, 2400);
+  Art.pan(H * 0.2, 2600);
+  goal.animate([{ transform: "translateY(0) scale(1)" }, { transform: "translateY(-34px) scale(1.08)" }], { duration: 2600, fill: "forwards", easing: "cubic-bezier(.45,0,.2,1)" });
+  setTimeout(() => Art.burst(goal.getBoundingClientRect().left + cw / 2, goal.getBoundingClientRect().top + cw * 0.25, { n: 22, speed: 3, g: -0.01, life: 1.8, size: 5, alpha: 0.85 }), 1500);
+  Snd.gust(3); setTimeout(() => Snd.rustle(0.06), 600); setTimeout(() => Snd.sparkle(), 1500);
   await say("k6");
   const misses = await choice("kq", [{ id: "kqa", icon: ICON.pillar }, { id: "kqc", ar: true, ok: true }, { id: "kqb", icon: ICON.cloud }], "kq_ok");
   await say("k_quran");

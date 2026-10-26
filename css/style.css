@@ -600,3 +600,66 @@ a.chip { display: inline-block; text-decoration: none; font-size: 14px; }
 .acard .tr.on { background: none; }
 .acard .w { border-radius: 8px; transition: background-color .12s, color .12s; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
 .acard .w.now { background: #BFE8C8; color: #145A2C; box-shadow: 0 0 0 3px #BFE8C8; }
+
+/* ============ ГРАФИКА (js/art.js): планы, свет, облака, луг, частицы, отклик ============ */
+.plane { position: absolute; inset: 0; pointer-events: none; }
+.plane .obj { pointer-events: auto; }
+.sky2, .skydeep { position: absolute; inset: 0; }
+.skydeep { opacity: 0; transition: opacity 2.2s ease; }
+.sunbloom { position: absolute; translate: -50% -50%; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(circle, rgba(255,251,232,.95) 0, rgba(255,238,178,.6) 3.5%, rgba(255,228,156,.26) 11%, rgba(255,222,146,.09) 33%, rgba(255,222,146,0) 60%); }
+.godrays { position: absolute; translate: -50% -50%; pointer-events: none; opacity: .6; will-change: transform;
+  background: repeating-conic-gradient(from 0deg, rgba(255,244,212,.26) 0deg 2.6deg, rgba(255,244,212,0) 2.6deg 9deg);
+  -webkit-mask-image: radial-gradient(circle, #000 0, rgba(0,0,0,.5) 22%, transparent 62%); mask-image: radial-gradient(circle, #000 0, rgba(0,0,0,.5) 22%, transparent 62%);
+  animation: spin 180s linear infinite; }
+.godrays.still { animation: none; }
+.suncore { position: absolute; translate: -50% -50%; pointer-events: none; }
+.suncore svg, .cloud2 svg, .range svg, .meadow svg, .tree2 svg, .tuft svg, .flower svg, .crane svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.cloud2 { position: absolute; translate: -50% -50%; pointer-events: none; will-change: transform; }
+.range, .meadow { position: absolute; inset: 0; pointer-events: none; }
+.tree2, .tuft, .flower { position: absolute; translate: -50% -100%; transform-origin: 50% 100%; pointer-events: none; animation: sway 3.6s ease-in-out infinite alternate; }
+.tree2 { animation-duration: 7s; }
+.flower, .tuft.still { animation: none; }
+.tuft.near { filter: blur(1.4px); animation-duration: 4.6s; z-index: 12; }
+@keyframes sway { from { rotate: -2.5deg; } to { rotate: 2.5deg; } }
+.cshadow { position: absolute; translate: -50% -50%; border-radius: 50%; pointer-events: none; background: radial-gradient(closest-side, rgba(24,48,32,.6), rgba(24,48,32,0)); }
+.fxcanvas { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 25; pointer-events: none; }
+.lightwave { position: absolute; z-index: 46; border-radius: 50%; pointer-events: none; mix-blend-mode: screen; }
+.ripple { position: absolute; z-index: 46; width: 86px; height: 86px; border-radius: 50%; border: 3px solid rgba(255,255,255,.9); box-shadow: 0 0 18px rgba(255,236,170,.8), inset 0 0 12px rgba(255,236,170,.5); pointer-events: none; }
+.filmgrain { position: absolute; inset: 0; z-index: 21; pointer-events: none; opacity: .045;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .5 0 0 0 0 .5 0 0 0 0 .5 0 0 0 1 0'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)'/%3E%3C/svg%3E"); }
+.vignette2 { position: absolute; inset: 0; z-index: 20; pointer-events: none; background: radial-gradient(ellipse 85% 75% at 50% 42%, transparent 62%, rgba(16,40,62,.26) 100%); }
+/* кран и кубики главы «Небо без опор» */
+.crane { position: absolute; inset: 0; pointer-events: none; }
+.trolley { position: absolute; translate: -50% 0; pointer-events: none; }
+.trolley svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.obj.block2 > svg, .obj.plank2 > svg { overflow: visible; }
+.obj.block2, .trolley { will-change: transform; }
+@media (prefers-reduced-motion: reduce) { .tree2, .tuft, .flower, .godrays { animation: none; } }
+.cloudshadow { position: absolute; border-radius: 50%; pointer-events: none; background: radial-gradient(closest-side, rgba(24,70,40,.2), rgba(24,70,40,0)); will-change: transform; }
+/* заставка главы: моушн */
+.chtitle .ct { position: relative; transition: opacity .6s ease, transform .7s cubic-bezier(.4,0,.2,1), filter .6s; }
+.chtitle.out .ct { opacity: 0; transform: translateY(-22px) scale(.98); filter: blur(5px); }
+.chtitle.out { opacity: 0; transition: opacity .7s .1s; }
+.chtitle .rosette { position: absolute; left: 50%; top: 50%; width: min(78vw, 360px); height: auto; translate: -50% -50%; z-index: -1; opacity: 0; transform: scale(.7) rotate(-35deg); transition: opacity 1s, transform 2.2s cubic-bezier(.2,.8,.2,1); }
+.chtitle.on .rosette { opacity: .5; transform: scale(1) rotate(0); }
+.chtitle .rosette path, .chtitle .rosette circle { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 1.8s cubic-bezier(.5,0,.2,1) .15s; }
+.chtitle .rosette circle[stroke-dasharray] { stroke-dasharray: .01 .02; stroke-dashoffset: 0; opacity: 0; transition: opacity 1s .9s; }
+.chtitle.on .rosette path, .chtitle.on .rosette circle { stroke-dashoffset: 0; }
+.chtitle.on .rosette circle[stroke-dasharray] { opacity: 1; }
+.chtitle small { opacity: 0; letter-spacing: 12px; transition: opacity .9s .1s, letter-spacing 1.2s cubic-bezier(.2,.8,.2,1) .1s; }
+.chtitle.on small { opacity: 1; letter-spacing: 3px; }
+.chtitle b span { display: inline-block; opacity: 0; transform: translateY(28px) scale(.94); filter: blur(6px); transition: opacity .55s, transform .9s cubic-bezier(.2,1.25,.3,1), filter .6s; transition-delay: calc(.3s + var(--i) * .14s); }
+.chtitle.on b span { opacity: 1; transform: none; filter: none; animation: titleGlow 2.4s ease-in-out calc(1s + var(--i) * .14s) 1; }
+@keyframes titleGlow { 40% { text-shadow: 0 0 24px rgba(255,226,140,.95), 0 4px 20px rgba(0,0,0,.45); } }
+.chtitle .orn .ol { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 1s cubic-bezier(.2,.8,.2,1) .7s; }
+.chtitle.on .orn .ol { stroke-dashoffset: 0; }
+.chtitle .orn .od, .chtitle .orn .oc { transform-box: fill-box; transform-origin: center; transform: scale(0) rotate(-90deg); transition: transform .7s cubic-bezier(.2,1.5,.4,1) .55s; }
+.chtitle.on .orn .od, .chtitle.on .orn .oc { transform: none; }
+@media (prefers-reduced-motion: reduce) { .chtitle *, .chtitle .rosette * { transition-duration: .01s !important; animation: none !important; } }
+.dropguide { position: absolute; width: 3px; translate: -50% 0; pointer-events: none; border-radius: 2px; transition: opacity .4s, box-shadow .2s;
+  background: repeating-linear-gradient(180deg, rgba(255,255,255,.75) 0 8px, rgba(255,255,255,0) 8px 16px); }
+.dropguide.on { background: repeating-linear-gradient(180deg, #FFE08A 0 10px, rgba(255,224,138,.2) 10px 16px); box-shadow: 0 0 10px rgba(255,214,110,.9); }
+/* слабое устройство: без лучей, качания и зерна */
+.lowfx .godrays, .lowfx .filmgrain { display: none; }
+.lowfx .tuft, .lowfx .tree2, .lowfx .cloud2 { animation: none !important; }
