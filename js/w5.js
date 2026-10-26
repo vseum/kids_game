@@ -695,8 +695,7 @@ async function chFatiha() {
   await say("fatiha_salah");
   const misses = await choice("fatiha_q", [{ id: "fatiha_qa", icon: ICON.w5_map }, { id: "fatiha_qb", icon: ICON.lantern }, { id: "fatiha_qc", ar: true, ok: true }], "fatiha_q_ok");
   await say("fatiha_quran");
-  await ayahCard("1:1-7");
-  await conclusion("fatiha_end", { btn: "Иншаллах" });
+  await ending(["1:1-7"], "fatiha_end", { btn: "Иншаллах" });
   hideCap(); await award("w5key");
   return misses;
 }
@@ -902,8 +901,7 @@ async function chIkhlas() {
   rb.remove();
   const misses = await choice("ikhlas_q", [{ id: "ikhlas_qa", icon: ICON.sunc }, { id: "ikhlas_qc", ar: true, ok: true }, { id: "ikhlas_qb", icon: ICON.mountain }], "ikhlas_q_ok");
   await say("ikhlas_quran");
-  await ayahCard("112:1-4");
-  await conclusion("ikhlas_end", { btn: "Ля иляха илляЛлах" });
+  await ending(["112:1-4"], "ikhlas_end", { btn: "Ля иляха илляЛлах" });
   hideCap(); await award("w5crystal");
   return misses;
 }
@@ -1156,8 +1154,7 @@ async function chFalaq() {
   rb.remove();
   const misses = await choice("falaq_q", [{ id: "falaq_qa", icon: ICON.w5_umb }, { id: "falaq_qb", icon: ICON.w5_torch }, { id: "falaq_qc", ar: true, ok: true }], "falaq_q_ok");
   await say("falaq_quran");
-  await ayahCard("113:1-5");
-  await conclusion("falaq_end", { btn: "Буду читать" });
+  await ending(["113:1-5"], "falaq_end", { btn: "Буду читать" });
   hideCap(); await award("w5dawn");
   return misses;
 }
@@ -1471,8 +1468,7 @@ async function chNas() {
   rb.remove();
   const misses = await choice("nas_q", [{ id: "nas_qa", icon: ICON.w5_blanket }, { id: "nas_qc", ar: true, ok: true }, { id: "nas_qb", icon: ICON.w5_run }], "nas_q_ok");
   await say("nas_quran");
-  await ayahCard("114:1-6");
-  await conclusion("nas_end", { btn: "А'узу би-Ллях" });
+  await ending(["114:1-6"], "nas_end", { btn: "А'узу би-Ллях" });
   hideCap(); await award("w5shield");
   return misses;
 }

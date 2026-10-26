@@ -80,6 +80,7 @@ const ART = {
     <path d="M30 22 Q50 2 70 22" fill="none" stroke="#2F7FAA" stroke-width="6" stroke-linecap="round"/>
     <path d="M26 24 H74 L70 70 H30Z" fill="url(#gCan)"/><path d="M28 36 L4 18 L8 12 L32 30Z" fill="#3C93C2"/><ellipse cx="6" cy="15" rx="5" ry="7" fill="#2F7FAA" transform="rotate(-35 6 15)"/>
     <path d="M34 30 V64" stroke="#fff" stroke-width="4" opacity=".35" stroke-linecap="round"/></svg>`,
+  table: `<svg viewBox="0 0 240 110" aria-hidden="true"><ellipse cx="120" cy="106" rx="104" ry="5" fill="#2E5A2A" opacity=".25"/><rect x="34" y="14" width="12" height="92" rx="4" fill="#8A5A34"/><rect x="194" y="14" width="12" height="92" rx="4" fill="#8A5A34"/><rect x="40" y="52" width="160" height="8" rx="3" fill="#7A4E2C"/><rect x="6" y="2" width="228" height="18" rx="7" fill="#B07A48"/><rect x="6" y="2" width="228" height="6" rx="3" fill="#C99460"/></svg>`,
   bowl: `<svg viewBox="0 0 150 84" aria-hidden="true"><ellipse cx="75" cy="22" rx="70" ry="16" fill="#E8DDC8"/><ellipse class="liq" cx="75" cy="24" rx="62" ry="12" fill="#F3ECDD" opacity=".9"/>
     <path d="M5 22 Q10 78 75 80 Q140 78 145 22 Q120 40 75 40 Q30 40 5 22Z" fill="#F5F0E6" stroke="#D8CBB0" stroke-width="2"/><path d="M30 52 Q75 62 120 52" stroke="#5BA9C9" stroke-width="4" fill="none" opacity=".7"/></svg>`,
   jugw: `<svg viewBox="0 0 70 70" aria-hidden="true"><path d="M20 8 H44 L42 16 Q58 24 56 44 Q54 64 34 64 Q14 64 12 44 Q10 24 26 16Z" fill="rgba(255,255,255,.55)" stroke="#8FB7C8" stroke-width="3"/><path d="M15 38 Q34 46 53 38 Q54 62 34 62 Q14 62 15 38Z" fill="#7CC4E8"/></svg>`,
@@ -485,8 +486,7 @@ async function chSky() {
   await say("k6");
   const misses = await choice("kq", [{ id: "kqa", icon: ICON.pillar }, { id: "kqc", ar: true, ok: true }, { id: "kqb", icon: ICON.cloud }], "kq_ok");
   await say("k_quran");
-  await ayahCard("35:41");
-  await conclusion("k_end", { btn: "Субханаллах" });
+  await ending(["35:41"], "k_end", { btn: "Субханаллах" });
   hideCap(); await award("cloud");
   return misses;
 }
@@ -536,7 +536,11 @@ async function chFruit() {
   await say("f4");
 
   /* лаборатория: вода + сахар + краска = не яблоко */
-  const bowl = obj("bowl", ART.bowl, W * 0.5, H * 0.62, 150, 84); bowl.style.zIndex = 8; fadeIn(bowl);
+  /* миска стоит на столике, сад на это время отходит в тень — иначе миска садится на ствол пальмы, как крона */
+  trees.forEach((t, i) => t.animate([{ opacity: 1 }, { opacity: i === 1 ? 0 : 0.3 }], { duration: 500, fill: "forwards" }));   // пальма за столиком — прячем совсем
+  const bowlY = Math.min(H * 0.6, groundY - 160);
+  const table = obj("labtable", ART.table, W * 0.5, bowlY + 42 + 55, 240, 110); table.style.zIndex = 7; fadeIn(table);
+  const bowl = obj("bowl", ART.bowl, W * 0.5, bowlY, 150, 84); bowl.style.zIndex = 8; fadeIn(bowl);
   const liq = bowl.querySelector(".liq");
   const parts = [
     { svg: ART.jugw, fx: 0.18, apply: () => { liq.setAttribute("fill", "#9FD3EA"); liq.setAttribute("opacity", ".9"); Snd.splash(); } },
@@ -549,11 +553,11 @@ async function chFruit() {
   for (let i = 0; i < 3; i++) { bowl.animate([{ rotate: "0deg" }, { rotate: "-4deg" }, { rotate: "4deg" }, { rotate: "0deg" }], { duration: 400 }); Snd.splash(); await sleep(420); }
   await say("f6");
   await say("f7");
-  fadeOut(bowl);
+  fadeOut(bowl); fadeOut(table);
+  trees.forEach(t => t.animate([{ opacity: getComputedStyle(t).opacity }, { opacity: 1 }], { duration: 500, fill: "forwards" }));
   const misses = await choice("fq", [{ id: "fqc", ar: true, ok: true }, { id: "fqa", icon: ICON.drop }, { id: "fqb", icon: ICON.soil }], "fq_ok");
   await say("f_quran");
-  await ayahCard("13:4");
-  await conclusion("f_end", { btn: "Альхамдулиллях" });
+  await ending(["13:4"], "f_end", { btn: "Альхамдулиллях" });
   hideCap(); await award("date");
   return misses;
 }
@@ -665,8 +669,7 @@ async function chShip() {
 
   const misses = await choice("sq", [{ id: "sqa", icon: ICON.sail }, { id: "sqb", icon: ICON.fan }, { id: "sqc", ar: true, ok: true }], "sq_ok");
   await say("s_quran");
-  await ayahCard("42:32-33");
-  await conclusion("s_end");
+  await ending(["42:32-33"], "s_end");
   hideCap(); await award("anchor");
   return misses;
 }
@@ -737,8 +740,7 @@ async function chMountain() {
   await say("m6");
   const misses = await choice("mq", [{ id: "mqa", icon: ICON.sand }, { id: "mqb", icon: ICON.wind }, { id: "mqc", ar: true, ok: true }], "mq_ok");
   await say("m_quran");
-  await ayahCard("78:6-7");
-  await conclusion("m_end", { btn: "Аллаху Акбар" });
+  await ending(["78:6-7"], "m_end", { btn: "Аллаху Акбар" });
   hideCap(); await award("stone");
   return misses;
 }
@@ -816,8 +818,7 @@ async function chSunLamp() {
   gauges.remove();
   const misses = await choice("lq", [{ id: "lqa", icon: ICON.lantern }, { id: "lqc", ar: true, ok: true }, { id: "lqb", icon: ICON.heater }], "lq_ok");
   await say("l_quran");
-  await ayahCard("71:15-16");
-  await conclusion("l_end", { btn: "Альхамдулиллях" });
+  await ending(["71:15-16"], "l_end", { btn: "Альхамдулиллях" });
   hideCap(); await award("sunray");
   return misses;
 }
@@ -880,8 +881,7 @@ async function chStars() {
   await say("z9");
   const misses = await choice("zq", [{ id: "zqa", icon: ICON.lantern }, { id: "zqb", icon: ICON.wheel }, { id: "zqc", ar: true, ok: true }], "zq_ok");
   await say("z_quran");
-  await ayahCard("16:16");
-  await conclusion("z_end");
+  await ending(["16:16"], "z_end");
   hideCap(); await award("star");
   return misses;
 }
@@ -946,8 +946,7 @@ async function chHear() {
   Snd.sparkle(); await sleep(2200);
   const misses = await choice("hq", [{ id: "hqa", icon: ICON.echo }, { id: "hqb", icon: ICON.bottle }, { id: "hqc", ar: true, ok: true }], "hq_ok");
   await say("h_quran");
-  await ayahCard("2:186");
-  await conclusion("h_end");
+  await ending(["2:186"], "h_end");
   hideCap(); await award("letter");
   return misses;
 }
@@ -1037,8 +1036,7 @@ async function chYunus() {
   await say("y6");
   const misses = await choice("yq", [{ id: "yqa", icon: ICON.wheel }, { id: "yqc", ar: true, ok: true }, { id: "yqb", icon: ICON.wave }], "yq_ok");
   await say("y_quran");
-  await ayahCard("21:87-88");
-  await conclusion("y_end");
+  await ending(["21:87-88"], "y_end");
   hideCap(); await award("pearl");
   return misses;
 }
@@ -1108,8 +1106,7 @@ async function chBless() {
   const misses = await choice("nq", [{ id: "nqa", icon: ICON.hundred }, { id: "nqc", icon: ICON.infinity, ok: true }, { id: "nqb", icon: ICON.bolt }], "nq_ok");
   fadeOut(counter);
   await say("n_quran");
-  await ayahCard("14:34");
-  await conclusion("n_end", { btn: "Альхамдулиллях" });
+  await ending(["14:34"], "n_end", { btn: "Альхамдулиллях" });
   hideCap(); await award("drop");
   return misses;
 }

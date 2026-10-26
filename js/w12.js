@@ -344,8 +344,7 @@ async function chWater() {
   await say("water_10");
   const misses = await choice("water_q", [{ id: "water_qa", icon: ICON.w12_jug }, { id: "water_qb", icon: ICON.wind }, { id: "water_qc", ar: true, ok: true }], "water_q_ok");
   await say("water_quran");
-  await ayahCard("25:53");
-  await conclusion("water_end", { btn: "Альхамдулиллях" });
+  await ending(["25:53"], "water_end", { btn: "Альхамдулиллях" });
   hideCap(); await award("w12_shell");
   return misses;
 }
@@ -478,8 +477,7 @@ async function chDayNight() {
   await say("daynight_8");
   const misses = await choice("daynight_q", [{ id: "daynight_qa", icon: ICON.w12_brush }, { id: "daynight_qc", ar: true, ok: true }, { id: "daynight_qb", icon: ICON.cloud }], "daynight_q_ok");
   await say("daynight_quran");
-  await ayahCard("36:40");
-  await conclusion("daynight_end", { btn: "Субханаллах" });
+  await ending(["36:40"], "daynight_end", { btn: "Субханаллах" });
   hideCap(); await award("w12_crescent");
   return misses;
 }
@@ -641,8 +639,7 @@ async function chNoSleep() {
   await say("nosleep_9");
   const misses = await choice("nosleep_q", [{ id: "nosleep_qa", icon: ICON.w12_clock }, { id: "nosleep_qb", icon: ICON.w12_torch }, { id: "nosleep_qc", ar: true, ok: true }], "nosleep_q_ok");
   await say("nosleep_quran");
-  await ayahCard("2:255");
-  await conclusion("nosleep_end", { btn: "Аллаху Акбар" });
+  await ending(["2:255"], "nosleep_end", { btn: "Аллаху Акбар" });
   hideCap(); await award("w12_clock");
   return misses;
 }
@@ -783,8 +780,7 @@ async function chEnough() {
   const misses = await choice("enough_q", [{ id: "enough_qa", icon: ICON.w12_shutters }, { id: "enough_qb", icon: ICON.w12_pause }, { id: "enough_qc", ar: true, ok: true }], "enough_q_ok");
   fear.remove();
   await say("enough_quran");
-  await ayahCard("65:3");
-  await conclusion("enough_end", { btn: "Хасбуна-Ллах" });
+  await ending(["65:3"], "enough_end", { btn: "Хасбуна-Ллах" });
   hideCap(); await award("w12_rainbow");
   return misses;
 }

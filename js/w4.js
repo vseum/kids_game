@@ -292,8 +292,7 @@ async function chShahada() {
   celebrate();
   const misses = await choice("shahada_q", [{ id: "shahada_qa", icon: ICON.sunc }, { id: "shahada_qb", icon: ICON.w4_fire }, { id: "shahada_qc", ar: true, ok: true }], "shahada_q_ok");
   await say("shahada_quran");
-  await ayahCard("47:19");
-  await conclusion("shahada_end", { btn: "Ля иляха илля Ллах" });
+  await ending(["47:19"], "shahada_end", { btn: "Ля иляха илля Ллах" });
   hideCap(); await award("w4_scroll");
   return misses;
 }
@@ -402,8 +401,7 @@ async function chWudu() {
   await say("wudu_6");
   const misses = await choice("wudu_q", [{ id: "wudu_qb", icon: ICON.w4_n5 }, { id: "wudu_qa", icon: ICON.w4_bism, ok: true }, { id: "wudu_qc", icon: ICON.w4_n4 }], "wudu_q_ok");
   await say("wudu_quran");
-  await ayahCard("5:6");
-  await conclusion("wudu_end", { btn: "Иншаллах" });
+  await ending(["5:6"], "wudu_end", { btn: "Иншаллах" });
   hideCap(); await award("w4_jug");
   return misses;
 }
@@ -495,8 +493,7 @@ async function chSalah() {
   await say("salah_5");
   const misses = await choice("salah_q", [{ id: "salah_qa", icon: ICON.w4_n1 }, { id: "salah_qb", icon: ICON.w4_n5g, ok: true }, { id: "salah_qc", icon: ICON.w4_n10 }], "salah_q_ok");
   await say("salah_quran");
-  await ayahCard("4:103");
-  await conclusion("salah_end", { btn: "Иншаллах" });
+  await ending(["4:103"], "salah_end", { btn: "Иншаллах" });
   hideCap(); await award("w4_rug");
   return misses;
 }
@@ -585,8 +582,7 @@ async function chSawm() {
   await say("sawm_8");
   const misses = await choice("sawm_q", [{ id: "sawm_qa", icon: ICON.w4_sunrise }, { id: "sawm_qb", icon: ICON.w4_noon }, { id: "sawm_qc", icon: ICON.w4_sunset, ok: true }], "sawm_q_ok");
   await say("sawm_quran");
-  await ayahCard("2:183");
-  await conclusion("sawm_end", { btn: "Иншаллах" });
+  await ending(["2:183"], "sawm_end", { btn: "Иншаллах" });
   hideCap(); await award("w4_fanous");
   return misses;
 }
@@ -732,8 +728,7 @@ async function chZakat() {
   const misses = await choice("zakat_q", [{ id: "zakat_qa", icon: ICON.w4_jar }, { id: "zakat_qb", ar: true, ok: true }, { id: "zakat_qc", icon: ICON.w4_chest }], "zakat_q_ok");
   fadeOut(counter, 300);
   await say("zakat_quran");
-  await ayahCard("2:261");
-  await conclusion("zakat_end", { btn: "Иншаллах" });
+  await ending(["2:261"], "zakat_end", { btn: "Иншаллах" });
   hideCap(); await award("w4_wheat");
   return misses;
 }
@@ -874,8 +869,7 @@ async function chHajj() {
   fadeOut(lapBox, 300);
   const misses = await choice("hajj_q", [{ id: "hajj_qb", icon: ICON.w4_hajj }, { id: "hajj_qa", ar: true, ok: true }, { id: "hajj_qc", icon: ICON.w4_crown }], "hajj_q_ok");
   await say("hajj_quran");
-  await ayahCard("22:27");
-  await conclusion("hajj_end", { btn: "Амин" });
+  await ending(["22:27"], "hajj_end", { btn: "Амин" });
   hideCap(); await award("w4_zamzam");
   return misses;
 }

@@ -202,8 +202,10 @@ const Voice = {
     if (this.cur) { const c = this.cur; this.cur = null; try { c.stop(); } catch (e) {} }
     const s = Snd.ac.createBufferSource(); s.buffer = b; s.connect(Snd.ac.destination);
     s.onended = () => { if (this.cur === s) this.cur = null; onEnd && onEnd(); };
-    s.start(); this.cur = s;
+    s.start(); this.cur = s; this.t0 = Snd.ac.currentTime; this.dur = b.duration;
   },
+  /* Сколько секунд уже звучит текущий файл (для подсветки слов); -1 — ничего не звучит */
+  pos() { return this.cur && Snd.ac ? Snd.ac.currentTime - this.t0 : -1; },
   /* Декодированные реплики: держим в памяти только последние 16, иначе на телефоне кончается память */
   async buffer(sp, id) {
     const key = sp + "/" + id;
@@ -389,20 +391,33 @@ const AR_DIGITS = n => String(n).replace(/\d/g, d => "٠١٢٣٤٥٦٧٨٩"[d]);
 const ICO_QARI = '<svg viewBox="0 0 28 28" aria-hidden="true"><path d="M14 8.2C11 6.3 7.4 5.8 3.5 6.6v14.2c3.9-.8 7.5-.3 10.5 1.6 3-1.9 6.6-2.4 10.5-1.6V6.6c-3.9-.8-7.5-.3-10.5 1.6z" fill="#fff"/><path d="M14 8.2v14.2" stroke="#B9802A" stroke-width="1.6"/><path d="M6.5 11h4.5M6.5 14h4.5M17 11h4.5M17 14h4.5" stroke="#E2B65A" stroke-width="1.4" stroke-linecap="round"/></svg>';
 const ICO_TR = '<svg viewBox="0 0 28 28" aria-hidden="true"><path d="M5 4.5h18a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3h-9.5l-6 4.5v-4.5H5a3 3 0 0 1-3-3v-10a3 3 0 0 1 3-3z" fill="#fff"/><text x="14" y="17.2" text-anchor="middle" font-family="Nunito, sans-serif" font-weight="900" font-size="10.5" fill="#1F6F80">Аа</text></svg>';
 const ICO_NEXT = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h13M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>';
-function ayahCard(key) {
+/* Слова арабского текста для подсветки — так же режет tools/word_timings.py: знаки паузы (ۚ ۖ …) — к предыдущему слову,
+   «يَا» — вместе со следующим (у чтеца это одно слово) */
+const AR_MARK = /^[\u06D6-\u06ED\u0615-\u061A۞]+$/;
+function arWords(ar) {
+  const out = [];
+  for (const t of ar.split(/\s+/)) {
+    if (!t) continue;
+    if (out.length && (AR_MARK.test(t) || out[out.length - 1] === "يَا")) out[out.length - 1] += " " + t;
+    else out.push(t);
+  }
+  return out;
+}
+function ayahCard(key, o = {}) {   // o.back — кнопка «Назад»; o.heard — уже дослушан (вернулись назад)
   return new Promise(res => {
     hideCap();
     const a = window.AYAT[key];
     const firstNum = +key.split(":")[1].split("-")[0];
-    const ar = a.parts.map((p, i) => `<span class="ap">${p.ar} <span class="num">﴿${AR_DIGITS(firstNum + i)}﴾</span></span>`).join(" ");
+    const ar = a.parts.map((p, i) => `<span class="ap">${arWords(p.ar).map(w => `<span class="w">${w}</span>`).join(" ")} <span class="num">﴿${AR_DIGITS(firstNum + i)}﴾</span></span>`).join(" ");
     const ov = el("div", "ayah", app,
       `<div class="acard">${["tl", "tr", "bl", "br"].map(c => `<svg class="star8 ${c}" viewBox="0 0 40 40" aria-hidden="true">${STAR8}</svg>`).join("")}<p class="ref">${a.ref}</p><div class="abody"><p class="ar" dir="rtl" lang="ar">${ar}</p>` +
       `<p class="tr"></p><p class="src">Перевод смыслов: Эльмир Кулиев · чтец Мишари аль-Афаси</p></div>` +
-      `<div class="abtns"><button class="ibtn qari" data-a="qari" aria-label="Послушать чтеца">${ICO_QARI}<small>Чтец</small></button>` +
+      `<div class="abtns">${o.back ? BACK_BTN : ""}<button class="ibtn qari" data-a="qari" aria-label="Послушать чтеца">${ICO_QARI}<small>Чтец</small></button>` +
       `<button class="ibtn trn" data-a="tr" aria-label="Послушать перевод">${ICO_TR}<small>Перевод</small></button>` +
       `<button class="btn next" data-a="next">Дальше ${ICO_NEXT}</button></div></div>`);
     const trP = ov.querySelector("p.tr"), aps = [...ov.querySelectorAll(".ap")], bQ = ov.querySelector(".qari"), bT = ov.querySelector(".trn"), bN = ov.querySelector(".next");
-    trP.textContent = L(a.tr);
+    const trWords = L(a.tr).split(/\s+/);
+    trP.innerHTML = trWords.map(w => `<span class="w">${w.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c])}</span>`).join(" ");
     /* длинный аят: арабский мельче, текст прокручивается внутри карточки, кнопки всегда на экране */
     const arLen = a.parts.reduce((n, p) => n + p.ar.length, 0);
     if (arLen > 260) ov.classList.add(arLen > 520 ? "xlong" : "long");
@@ -419,21 +434,46 @@ function ayahCard(key) {
       const e = what === "ar" ? aps[i] : what === "tr" ? trP : null;
       if (e) { const r = e.getBoundingClientRect(), br = body.getBoundingClientRect(); if (r.top < br.top || r.bottom > br.bottom) body.scrollTo({ top: body.scrollTop + r.top - br.top - 8, behavior: "smooth" }); }
     };
+    /* подсветка слова, которое звучит сейчас: время слов — js/ayat_words.js (чтец — разметка quran.com, перевод — распознавание
+       нашей озвучки). Перевод другим голосом, для которого разметки нет, — делим длительность по длине слов */
+    const AW = window.AYAT_WORDS || { qari: {}, tr: {} };
+    const arSpans = aps.map(e => [...e.querySelectorAll(".w")]), trSpans = [...trP.querySelectorAll(".w")];
+    let follow = 0, lit = null;
+    const light = e => { if (lit === e) return; if (lit) lit.classList.remove("now"); lit = e; if (e) e.classList.add("now"); };
+    const trTimes = () => {
+      const w = AW.tr && AW.tr.w && AW.tr.w[a.tr];
+      if (w && w.length === trSpans.length && Voice.src(a.tr) === AW.tr.voice) return w;
+      const len = trWords.map(x => Math.max(1, x.replace(/[^\p{L}]/gu, "").length)), tot = len.reduce((x, y) => x + y, 0), d = (Voice.dur || 0) * 1000;
+      let acc = 0; return len.map(l => { const s0 = acc; acc += d * l / tot; return [s0, acc]; });
+    };
+    const track = (spans, times) => {
+      const my = ++follow;
+      const step = () => {
+        if (my !== follow || closed) return;
+        const t = Voice.pos() * 1000;
+        if (t >= 0 && times) { let k = -1; for (let j = 0; j < times.length; j++) if (times[j][0] <= t + 40) k = j; light(k >= 0 ? spans[k] : null); }
+        requestAnimationFrame(step);
+      };
+      requestAnimationFrame(step);
+    };
+    const untrack = () => { follow++; light(null); };
     const qariBuf = i => Voice.buffer("qari", a.parts[i].n);
     a.parts.forEach((_, i) => qariBuf(i).catch(() => {}));   // скачиваем заранее, чтобы аяты шли без пауз
     /* Аят не перематывается: «Дальше» открывается, когда дослушаны и чтец, и перевод (без звука — когда хватит времени прочитать) */
-    const heard = { ar: false, tr: false }, trText = L(a.tr);
+    const heard = { ar: !!o.heard, tr: !!o.heard }, trText = L(a.tr);
     const lock = keyLock(bN, () => heard.ar && heard.tr, 2500 + arLen * 25 + trText.length * 55);
+    if (o.heard) lock.release();
     const hint = () => { bQ.classList.toggle("glow", !heard.ar); bT.classList.toggle("glow", heard.ar && !heard.tr); };
     const run = async what => {
       Voice.stop(); const my = Voice.seq, live = () => my === Voice.seq && !closed;
-      bQ.classList.remove("glow"); bT.classList.remove("glow");
+      bQ.classList.remove("glow"); bT.classList.remove("glow"); lock.hold();
       if (what !== "tr") {
         let all = true;
         for (let i = 0; i < a.parts.length; i++) {
           let b; try { b = await qariBuf(i); } catch (e) { all = false; break; }
           if (!live()) return;
-          mark("ar", i); await new Promise(r => Voice.play(b, r));
+          mark("ar", i); const tw = AW.qari && AW.qari[a.parts[i].n];
+          await new Promise(r => { Voice.play(b, r); track(arSpans[i], tw && tw.length === arSpans[i].length ? tw : null); }); untrack();
           if (!live()) return;
         }
         mark(null); heard.ar = true;   // запись чтеца не загрузилась — не держим ребёнка: перевод всё равно звучит
@@ -441,7 +481,9 @@ function ayahCard(key) {
         if (what === "qari") { lock.check(); hint(); return; }
         await sleep(450); if (!live()) return;
       }
-      mark("tr"); const s0 = Voice.seq; await Voice.speak(a.tr);
+      mark("tr"); const s0 = Voice.seq; const sp = Voice.speak(a.tr);
+      (async () => { while (!Voice.cur && Voice.seq === s0 + 1 && !closed) await sleep(30); if (Voice.seq === s0 + 1) track(trSpans, trTimes()); })();
+      await sp; untrack();
       if (Voice.seq !== s0 + 1 || closed) return;
       mark(null); heard.tr = true; lock.check(); hint();
     };
@@ -452,25 +494,38 @@ function ayahCard(key) {
       Snd.tap();
       if (act === "qari") run("qari");
       else if (act === "tr") run("tr");
-      else { closed = true; lock.stop(); ov.style.pointerEvents = "none"; Voice.stop(); mark(null); ov.classList.remove("on"); setTimeout(() => ov.remove(), 400); res(); }
+      else { closed = true; lock.stop(); ov.style.pointerEvents = "none"; Voice.stop(); mark(null); ov.classList.remove("on"); setTimeout(() => ov.remove(), 400); res(act); }
     });
-    if (Voice.on && Snd.ac) setTimeout(() => { if (!closed) run("all"); }, 700); else { heard.ar = heard.tr = true; lock.wait(); }
+    if (Voice.on && Snd.ac) setTimeout(() => { if (!closed) run("all"); }, 700); else if (!o.heard) { heard.ar = heard.tr = true; lock.wait(); }
   });
 }
 
 /* Замок кнопки «Дальше» в конце главы: открыт, когда ready() (всё дослушано). Без звука — по таймеру на чтение.
+   Открылся — через 3 с жмётся сам (полоска на кнопке, как у реплик); ребёнок включил чтеца или перевод — отсчёт ждёт конца.
    Подстраховка: если звук пропал посреди (выключили, не загрузился) — откроется сама через readMs * 2 */
 function keyLock(btn, ready, readMs) {
-  let opened = false, t = null;
+  let opened = false, t = null, at = null, live = true;
   btn.classList.add("lock"); btn.setAttribute("aria-disabled", "true");
-  const unlock = () => { if (opened) return; opened = true; clearTimeout(t); btn.classList.remove("lock"); btn.removeAttribute("aria-disabled"); btn.classList.add("glow"); };
-  const fallback = setTimeout(unlock, Math.min(120000, readMs * 2 + 8000));
+  const arm = () => {
+    clearTimeout(at); if (!live) return;
+    btn.classList.remove("auto"); void btn.offsetWidth; btn.classList.add("auto");
+    at = setTimeout(() => { if (!live) return; if (document.querySelector(".sheet")) { arm(); return; } btn.click(); }, AUTO_MS);
+  };
+  const unlock = () => {
+    if (!opened) { opened = true; clearTimeout(t); btn.classList.remove("lock", "timer"); btn.removeAttribute("aria-disabled"); btn.classList.add("glow"); }
+    arm();
+  };
+  let fallback = null;
+  const fb = () => { if (Voice.cur || (window.speechSynthesis && speechSynthesis.speaking)) fallback = setTimeout(fb, 3000); else unlock(); };   // пока звучит — не открываем
+  fallback = setTimeout(fb, Math.min(120000, readMs * 2 + 8000));
   return {
     open: () => opened,
     check: () => { if (ready()) unlock(); },
+    hold: () => { clearTimeout(at); btn.classList.remove("auto"); },
+    release: () => { opened = true; clearTimeout(t); btn.classList.remove("lock", "timer"); btn.removeAttribute("aria-disabled"); },   // уже дослушано: открыт, но сам не жмётся
     wait: () => { btn.classList.add("timer"); btn.style.setProperty("--lock-ms", Math.min(30000, readMs) + "ms"); t = setTimeout(unlock, Math.min(30000, readMs)); },
     nudge: () => { btn.classList.remove("nudge"); void btn.offsetWidth; btn.classList.add("nudge"); Snd.thud(0.15); },
-    stop: () => { clearTimeout(t); clearTimeout(fallback); },
+    stop: () => { live = false; clearTimeout(t); clearTimeout(at); clearTimeout(fallback); btn.classList.remove("auto"); },
   };
 }
 
@@ -491,16 +546,17 @@ function conclusion(id, opt = {}) {
       `<p class="lbl">Что мы узнали</p><div class="abody"><p class="vyvod"></p>` +
       (items ? `<details class="dalil"><summary>${ICO_BOOK}<span>Доводы из Корана и Сунны</span></summary><ol>${items}</ol>` +
         `<p class="src">Вывод — пересказ смысла этих аятов и хадисов. Перевод смыслов Корана: Эльмир Кулиев.</p></details>` : "") +
-      `</div><div class="abtns"><button class="ibtn trn" data-a="say" aria-label="Послушать ещё раз">${ICO_TR}<small>Ещё раз</small></button>` +
+      `</div><div class="abtns">${opt.back ? BACK_BTN : ""}<button class="ibtn trn" data-a="say" aria-label="Послушать ещё раз">${ICO_TR}<small>Ещё раз</small></button>` +
       `<button class="btn next" data-a="next">${esc(opt.btn || "Дальше")} ${ICO_NEXT}</button></div></div>`);
     const txt = ov.querySelector(".vyvod"), bS = ov.querySelector(".trn"), bN = ov.querySelector(".next");
     txt.textContent = callName(true) + L(id);
     requestAnimationFrame(() => requestAnimationFrame(() => ov.classList.add("on")));
     Snd.sparkle();
-    let closed = false, heard = false;
+    let closed = false, heard = !!opt.heard;
     const lock = keyLock(bN, () => heard, 1500 + L(id).length * 60);
+    if (heard) lock.release();
     const speak = async () => {
-      Voice.stop(); const s0 = Voice.seq; txt.classList.add("on"); bS.classList.add("play");
+      Voice.stop(); lock.hold(); const s0 = Voice.seq; txt.classList.add("on"); bS.classList.add("play");
       await Voice.speak(id, true);
       if (Voice.seq !== s0 + 1 || closed) return;
       txt.classList.remove("on"); bS.classList.remove("play"); heard = true; lock.check();
@@ -510,11 +566,29 @@ function conclusion(id, opt = {}) {
       if (b.dataset.a === "next" && !lock.open()) { lock.nudge(); return; }
       Snd.tap();
       if (b.dataset.a === "say") speak();
-      else { closed = true; lock.stop(); Voice.stop(); ov.style.pointerEvents = "none"; ov.classList.remove("on"); setTimeout(() => ov.remove(), 400); res(); }
+      else { closed = true; lock.stop(); Voice.stop(); ov.style.pointerEvents = "none"; ov.classList.remove("on"); setTimeout(() => ov.remove(), 400); res(b.dataset.a); }
     });
-    if (Voice.on && Snd.ac) setTimeout(() => { if (!closed) speak(); }, 600); else { heard = true; lock.wait(); }
+    if (Voice.on && Snd.ac) setTimeout(() => { if (!closed) speak(); }, 600); else if (!heard) { heard = true; lock.wait(); }
   });
 }
+
+/* Конец главы: аят(ы) → «Что мы узнали». Кнопка «Назад» возвращает к предыдущей карточке (аят звучит снова, «Дальше» уже открыт).
+   mid — реплики перед аятом с номером i (i > 0), звучат один раз: { 1: "qadar_quran2" } */
+async function ending(keys, endId, opt = {}) {
+  const seen = new Set(); let i = 0, endSeen = false;
+  for (;;) {
+    if (i < keys.length) {
+      if (i > 0 && opt.mid && opt.mid[i] && !seen.has(i)) await say(opt.mid[i]);
+      const r = await ayahCard(keys[i], { back: i > 0, heard: seen.has(i) });
+      seen.add(i); i += r === "back" ? -1 : 1;
+    } else {
+      const r = await conclusion(endId, { ...opt, back: true, heard: endSeen }); endSeen = true;
+      if (r !== "back") return;
+      i = keys.length - 1;
+    }
+  }
+}
+const BACK_BTN = '<button class="ibtn back" data-a="back" aria-label="Назад"><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M17 7l-7 7 7 7" stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><small>Назад</small></button>';
 
 /* ============ ЗАСТАВКА ГЛАВЫ ============ */
 /* Текущая глава (id): по ней заставка сама считает «Уровень N · Глава M» */
