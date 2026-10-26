@@ -6,14 +6,15 @@
   1. Слово есть в Коране буква в букву (с огласовками) — живая пословная запись чтеца quran.com (audio.qurancdn.com/wbw).
      Индекс слов Корана — api.quran.com, кэш в --qcache. Номер файла считаем сами по настоящим словам аята: audio_url из API
      считает и знаки паузы (ۚ ۖ), и в таких аятах под «قُلْ» звучит соседнее слово. Чтеца тоже проверяем, до 6 мест на слово.
-  2. Иначе — нейроголос Microsoft (edge-tts): Zariyah, потом Hamed, обычный и медленный темп. Одно слово синтез часто
+  2. Прежний слог «Алиф-Ба» с тем же текстом (voice/ar/ar_<буква>_<огласовка>.mp3), если есть.
+  3. Иначе — нейроголос Microsoft (edge-tts): Zariyah, потом Hamed, обычный и медленный темп. Одно слово синтез часто
      читает «с остановкой» и глотает конечную огласовку (زَمْزَمُ → «замзам»), поэтому второй вариант — «слово слово»:
      первое прочитано полностью, его отрезаем по разметке фонем и проверяем отдельно.
 Каждый вариант проверяет распознаватель фонем (wav2vec2-xlsr-53-espeak-cv-ft): согласные и гласные должны совпасть
 с написанным. Не прошёл ни один вариант — звука нет (неверный звук учит неверному чтению), слово уходит
 в суфлёр (alifba/ar_extra_ms.json → раздел «Арабские звуки»), там его записывает человек.
 Уже существующие файлы не трогаем без --force: живые записи главнее. Откуда каждый звук — alifba/ms_audio_src.json
-(записанный человеком помечать там «запись»). --recheck перепроверяет только синтез и переделывает непрошедшее.
+(записанный человеком помечать там «запись»). --recheck перепроверяет готовые файлы (кроме записей) и переделывает непрошедшее.
 --audit — только проверить существующие слоги букв (ar_<буква>_a/_sk) и вывести, какие не прошли.
 """
 import argparse
@@ -127,9 +128,25 @@ def tok_classes(p):
     return C.get(p, "?")
 
 
+# Дифтонги и слитные знаки распознавателя — на отдельные звуки: «aɪ» в زَيْتُ — это «а» и «й», а не потерянная Йа
+SPLIT = {"aɪ": "a j", "ai": "a j", "aʊ": "a w", "au": "a w", "ɑu": "a w", "eɪ": "e j", "ei": "e j", "oʊ": "o w", "ou": "o w",
+         "ɔɪ": "o j", "oɪ": "o j", "ja": "j a", "ju": "j u", "iə": "i ə", "ɑɹ": "ɑ ɹ", "ɔɹ": "ɔ ɹ", "oɹ": "o ɹ", "ɛɹ": "ɛ ɹ",
+         "ɪɹ": "ɪ ɹ", "ʊɹ": "ʊ ɹ", "əl": "ə l", "aɪə": "a j ə", "aɪɚ": "a j ə",
+         "iɛ": "i ɛ", "iɑ": "i ɑ", "ia": "i a", "ua": "u a", "uo": "u o", "ɑu": "ɑ w"}
+
+
+def expand(rec):
+    out, src = [], []
+    for i, p in enumerate(rec):
+        for q in SPLIT.get(re.sub(r"[\d.ː]", "", p), p).split():
+            out.append(q); src.append(i)
+    return out, src
+
+
 def align(exp, rec):
     """Взвешенная правка между ожидаемым (класс, необязательный, строгий) и распознанным.
-    Возвращает (ошибки, для каждого ожидаемого — индекс сопоставленной фонемы или None)."""
+    Возвращает (ошибки, для каждого ожидаемого — индекс сопоставленной фонемы в rec или None)."""
+    rec, src = expand(rec)
     R = [tok_classes(p) for p in rec]
     n, m = len(exp), len(R)
     INF = 1e9
@@ -157,7 +174,7 @@ def align(exp, rec):
     mp, i, j = [None] * n, n, m
     while i or j:
         b = B[i][j]
-        if b == "m": i -= 1; j -= 1; mp[i] = j
+        if b == "m": i -= 1; j -= 1; mp[i] = src[j]
         elif b == "d": i -= 1
         else: j -= 1
     return D[n][m], mp
@@ -234,8 +251,10 @@ def cut_first(phon, t, raw, cut):
 
 def finish(raw, out):
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", str(raw), "-af",
-                    "silenceremove=start_periods=1:start_threshold=-45dB,areverse,silenceremove=start_periods=1:start_threshold=-45dB,areverse,"
-                    "adelay=120:all=1,apad=pad_dur=0.15,loudnorm=I=-16:TP=-1.5:LRA=11",
+                    # тишину по краям убираем мягко: жёсткий порог срезал тихий конец слова (конечное «-у», «-т»)
+                    "silenceremove=start_periods=1:start_threshold=-55dB:start_silence=0.06,areverse,"
+                    "silenceremove=start_periods=1:start_threshold=-55dB:start_silence=0.12,areverse,"
+                    "adelay=80:all=1,apad=pad_dur=0.1,loudnorm=I=-16:TP=-1.5:LRA=11",
                     "-ar", "44100", "-ac", "1", "-b:a", "64k", str(out)], check=True)
 
 
@@ -244,7 +263,7 @@ def main():
     ap.add_argument("--force", action="store_true")
     ap.add_argument("--only", default="")
     ap.add_argument("--audit", action="store_true")
-    ap.add_argument("--recheck", action="store_true", help="перепроверить синтез (не чтеца и не записи) и переделать непрошедшее")
+    ap.add_argument("--recheck", action="store_true", help="перепроверить готовые файлы (кроме записей) и переделать непрошедшее")
     ap.add_argument("--qcache", default=str(Path(tempfile.gettempdir()) / "ms_qwords.json"))
     a = ap.parse_args()
     phon = Phon()
@@ -280,6 +299,15 @@ def main():
                 items.append({"t": t, "les": les["id"], "l": g["l"]})
     SRC = ROOT / "alifba" / "ms_audio_src.json"   # откуда каждый звук: quran / голос синтеза / запись
     srcs = json.loads(SRC.read_text(encoding="utf-8")) if SRC.exists() else {}
+    # прежние слоги «Алиф-Ба» (voice/ar/ar_<буква>_<огласовка>.mp3): если текст совпадает — ещё один кандидат, тоже с проверкой
+    OLD = {}
+    for lid, ch in chars.items():
+        base = lambda h: ("إ" if h == "i" else "أ") if lid == "alif" else ch
+        for h, t in [("a", base("a") + FATHA), ("i", base("i") + KASRA), ("u", base("u") + DAMMA), ("sk", "أ" + FATHA + ch + SUKUN),
+                     ("aa", base("a") + FATHA + "ا"), ("ii", base("i") + KASRA + "ي"), ("uu", base("u") + DAMMA + "و")]:
+            f = OUT / f"ar_{lid}_{h}.mp3"
+            if f.exists() and not (lid == "alif" and h in ("sk", "aa", "ii", "uu")):
+                OLD.setdefault(t, f)
     report = []
     OUT.mkdir(parents=True, exist_ok=True)
     for n, it in enumerate(items, 1):
@@ -290,21 +318,24 @@ def main():
             continue
         if out.exists() and not a.force:
             was = srcs.get(iid) or "есть"
-            if not (a.recheck and was not in ("quran", "запись", "есть") and not passes(t, phon(out))[0]):
+            if not (a.recheck and was not in ("запись", "есть") and not passes(t, phon(out))[0]):
                 report.append({**it, "id": iid, "src": was})
                 continue
             print("перепроверка не прошла:", t, was, flush=True)
+            out.unlink()   # непрошедший файл не остаётся, даже если замены не найдётся
         if not out.exists() and iid in srcs and srcs[iid] is None and not a.force:
             report.append({**it, "id": iid, "src": None})   # уже не прошёл ни один вариант — ждёт живой записи (--force — пробовать снова)
             continue
         res = {**it, "id": iid, "src": None, "tries": []}
         with tempfile.TemporaryDirectory() as td:
-            cands = [("quran", u, "") for u in Q.get(qnorm(t), [])]
+            cands = [("quran", u, "") for u in Q.get(qnorm(t), [])] + ([("old", OLD[t], "")] if t in OLD else [])
             cands += [("tts", v, mode) for v in VOICES for mode in ("one", "two")]
             for k, (kind, arg, mode) in enumerate(cands):
                 raw = Path(td) / f"raw{k}.mp3"
-                name = "quran:" + arg if kind == "quran" else arg[0][6:-6] + arg[1] + ("·2" if mode == "two" else "")
-                if kind == "quran":
+                name = "quran:" + arg if kind == "quran" else "прежний " + arg.stem if kind == "old" else arg[0][6:-6] + arg[1] + ("·2" if mode == "two" else "")
+                if kind == "old":
+                    raw = arg
+                elif kind == "quran":
                     if subprocess.run(["curl", "-sfL", "-A", "Mozilla/5.0", "--retry", "3", "-o", str(raw), "https://audio.qurancdn.com/" + arg]).returncode:
                         res["tries"].append({"v": name, "err": "нет файла"})
                         continue
@@ -332,6 +363,11 @@ def main():
                 res["tries"].append({"v": name, "rec": " ".join(rec), "s": round(s, 2), "ok": ok})
                 if ok:
                     finish(raw, out)
+                    ok2, s2 = passes(t, phon(out))   # и готовый файл — после обрезки и выравнивания громкости
+                    if not ok2:
+                        out.unlink()
+                        res["tries"][-1].update(ok=False, err=f"после обработки {s2:.1f}")
+                        continue
                     res["src"] = "quran" if kind == "quran" else name
                     break
         report.append(res)

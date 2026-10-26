@@ -39,21 +39,25 @@ def main():
             ok = k.startswith(pre) if len(pre) > 1 else re.match(re.escape(pre) + r"(\d|q|_)", k)
             if ok and not k.startswith("tr_"):
                 add(k, group)
-        # перевод аята этой главы — из её кода: ayahCard("S:A…") → tr_<S>_<A>
+        # перевод аята этой главы — из её кода: ayahCard("S:A…") / ending(["S:A"…]) → tr_<S>_<A>
         fn = re.search(r'fn:\s*(\w+)', src[src.find(f'id: "{cid}"'):]).group(1)
         fbody = src[src.find(f"async function {fn}("):]
         fbody = fbody[: fbody.find("\nasync function ", 10) if "\nasync function " in fbody[10:] else len(fbody)]
-        for key in re.findall(r'ayahCard\("([\d:-]+)"\)', fbody):
+        keys = re.findall(r'ayahCard\("([\d:-]+)"', fbody)   # аяты главы: ayahCard("S:A") и ending(["S:A", …])
+        for arr in re.findall(r'ending\(\[([^\]]*)\]', fbody):
+            keys += re.findall(r'"([\d:-]+)"', arr)
+        for key in keys:
             m = re.search(r'"%s":\s*\{[^}]*?tr:\s*"(tr_\w+)"' % re.escape(key), src, re.S)
             if m:
                 add(m.group(1), group)
-    alif = ("a_", "l2_", "l3_", "l4_", "l5_")                     # реплики «Алиф-Ба» — отдельным блоком в конце
+    alif = ("a_", "ms")                                           # реплики «Алиф-Ба» — отдельным блоком в конце
     for k in lines:
         if not k.startswith(alif):
             add(k, "Финал и общие фразы")
-    for k in lines:
-        if k.startswith(alif):
-            add(k, "Алиф-Ба · уровень " + ("1" if k.startswith("a_") else k[1]))
+    acode = "".join(p.read_text(encoding="utf-8") for p in (ROOT / "alifba" / "js").glob("*.js") if "lines" not in p.name)
+    for k in lines:   # курс целиком; из старых a_ — только то, что звучит: id в коде или a_<буква>_name/_pic
+        if k.startswith("ms") or k.startswith("a_") and (f'"{k}"' in acode or re.fullmatch(r"a_\w+_(name|pic)", k)):
+            add(k, "Алиф-Ба · Муаллим сани" if k.startswith("ms") else "Алиф-Ба · буквы")
     (ROOT / "zapis.json").write_text(json.dumps(items, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
     print(len(items), "реплик;", sum(i["g"] == "Финал и общие фразы" for i in items), "без главы")
 
