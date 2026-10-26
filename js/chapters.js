@@ -486,7 +486,7 @@ async function chSky() {
   const misses = await choice("kq", [{ id: "kqa", icon: ICON.pillar }, { id: "kqc", ar: true, ok: true }, { id: "kqb", icon: ICON.cloud }], "kq_ok");
   await say("k_quran");
   await ayahCard("35:41");
-  await say("k_end", { btn: "Субханаллах" });
+  await conclusion("k_end", { btn: "Субханаллах" });
   hideCap(); await award("cloud");
   return misses;
 }
@@ -553,7 +553,7 @@ async function chFruit() {
   const misses = await choice("fq", [{ id: "fqc", ar: true, ok: true }, { id: "fqa", icon: ICON.drop }, { id: "fqb", icon: ICON.soil }], "fq_ok");
   await say("f_quran");
   await ayahCard("13:4");
-  await say("f_end", { btn: "Альхамдулиллях" });
+  await conclusion("f_end", { btn: "Альхамдулиллях" });
   hideCap(); await award("date");
   return misses;
 }
@@ -666,7 +666,7 @@ async function chShip() {
   const misses = await choice("sq", [{ id: "sqa", icon: ICON.sail }, { id: "sqb", icon: ICON.fan }, { id: "sqc", ar: true, ok: true }], "sq_ok");
   await say("s_quran");
   await ayahCard("42:32-33");
-  await say("s_end");
+  await conclusion("s_end");
   hideCap(); await award("anchor");
   return misses;
 }
@@ -738,7 +738,7 @@ async function chMountain() {
   const misses = await choice("mq", [{ id: "mqa", icon: ICON.sand }, { id: "mqb", icon: ICON.wind }, { id: "mqc", ar: true, ok: true }], "mq_ok");
   await say("m_quran");
   await ayahCard("78:6-7");
-  await say("m_end", { btn: "Аллаху Акбар" });
+  await conclusion("m_end", { btn: "Аллаху Акбар" });
   hideCap(); await award("stone");
   return misses;
 }
@@ -817,7 +817,7 @@ async function chSunLamp() {
   const misses = await choice("lq", [{ id: "lqa", icon: ICON.lantern }, { id: "lqc", ar: true, ok: true }, { id: "lqb", icon: ICON.heater }], "lq_ok");
   await say("l_quran");
   await ayahCard("71:15-16");
-  await say("l_end", { btn: "Альхамдулиллях" });
+  await conclusion("l_end", { btn: "Альхамдулиллях" });
   hideCap(); await award("sunray");
   return misses;
 }
@@ -881,7 +881,7 @@ async function chStars() {
   const misses = await choice("zq", [{ id: "zqa", icon: ICON.lantern }, { id: "zqb", icon: ICON.wheel }, { id: "zqc", ar: true, ok: true }], "zq_ok");
   await say("z_quran");
   await ayahCard("16:16");
-  await say("z_end");
+  await conclusion("z_end");
   hideCap(); await award("star");
   return misses;
 }
@@ -947,7 +947,7 @@ async function chHear() {
   const misses = await choice("hq", [{ id: "hqa", icon: ICON.echo }, { id: "hqb", icon: ICON.bottle }, { id: "hqc", ar: true, ok: true }], "hq_ok");
   await say("h_quran");
   await ayahCard("2:186");
-  await say("h_end");
+  await conclusion("h_end");
   hideCap(); await award("letter");
   return misses;
 }
@@ -1038,7 +1038,7 @@ async function chYunus() {
   const misses = await choice("yq", [{ id: "yqa", icon: ICON.wheel }, { id: "yqc", ar: true, ok: true }, { id: "yqb", icon: ICON.wave }], "yq_ok");
   await say("y_quran");
   await ayahCard("21:87-88");
-  await say("y_end");
+  await conclusion("y_end");
   hideCap(); await award("pearl");
   return misses;
 }
@@ -1109,7 +1109,7 @@ async function chBless() {
   fadeOut(counter);
   await say("n_quran");
   await ayahCard("14:34");
-  await say("n_end", { btn: "Альхамдулиллях" });
+  await conclusion("n_end", { btn: "Альхамдулиллях" });
   hideCap(); await award("drop");
   return misses;
 }

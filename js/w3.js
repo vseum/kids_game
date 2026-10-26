@@ -410,7 +410,7 @@ async function chIman() {
   const misses = await choice("iman_q", [{ id: "iman_qa", icon: ICON.mountain }, { id: "iman_qb", icon: ICON.w3_fire }, { id: "iman_qc", ar: true, ok: true }], "iman_q_ok");
   await say("iman_quran");
   await ayahCard("42:11");
-  await say("iman_end", { btn: "Аллаху Акбар" });
+  await conclusion("iman_end", { btn: "Аллаху Акбар" });
   hideCap(); await award("w3_star");
   return misses;
 }
@@ -531,7 +531,7 @@ async function chAngels() {
   const misses = await choice("angels_q", [{ id: "angels_qa", icon: ICON.wind }, { id: "angels_qc", icon: ICON.w3_angels, ok: true }, { id: "angels_qb", icon: ICON.cloud }], "angels_q_ok");
   await say("angels_quran");
   await ayahCard("82:10-12");
-  await say("angels_end", { btn: "Ин ша Аллах" });
+  await conclusion("angels_end", { btn: "Ин ша Аллах" });
   hideCap(); await award("w3_book");
   return misses;
 }
@@ -653,7 +653,7 @@ async function chBooks() {
   const misses = await choice("books_q", [{ id: "books_qa", icon: ICON.w3_taurat }, { id: "books_qb", icon: ICON.w3_injil }, { id: "books_qc", icon: ICON.w3_quran, ok: true }], "books_q_ok");
   await say("books_quran");
   await ayahCard("3:3");
-  await say("books_end", { btn: "Ин ша Аллах" });
+  await conclusion("books_end", { btn: "Ин ша Аллах" });
   hideCap(); await award("w3_bookmark");
   return misses;
 }
@@ -740,7 +740,7 @@ async function chProphets() {
   const misses = await choice("prophets_q", [{ id: "prophets_qa", icon: ICON.ship }, { id: "prophets_qb", icon: ICON.w3_palm }, { id: "prophets_qc", icon: ICON.w3_openbook, ok: true }], "prophets_q_ok");
   await say("prophets_quran");
   await ayahCard("33:40");
-  await say("prophets_end");
+  await conclusion("prophets_end");
   hideCap(); await award("w3_beacon");
   return misses;
 }
@@ -859,7 +859,7 @@ async function chLastday() {
   const misses = await choice("lastday_q", [{ id: "lastday_qa", icon: ICON.w3_dust }, { id: "lastday_qb", icon: ICON.w3_night }, { id: "lastday_qc", icon: ICON.w3_lastday, ok: true }], "lastday_q_ok");
   await say("lastday_quran");
   await ayahCard("99:7-8");
-  await say("lastday_end", { btn: "Ин ша Аллах" });
+  await conclusion("lastday_end", { btn: "Ин ша Аллах" });
   hideCap(); sc.stop(); await award("w3_scales");
   return misses;
 }
@@ -1014,7 +1014,7 @@ async function chQadar() {
   await ayahCard("54:49");
   await say("qadar_quran2");
   await ayahCard("18:23-24");
-  await say("qadar_end", { btn: "Альхамдулиллях" });
+  await conclusion("qadar_end", { btn: "Альхамдулиллях" });
   hideCap(); await award("w3_umbrella");
   return misses;
 }

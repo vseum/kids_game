@@ -345,7 +345,7 @@ async function chWater() {
   const misses = await choice("water_q", [{ id: "water_qa", icon: ICON.w12_jug }, { id: "water_qb", icon: ICON.wind }, { id: "water_qc", ar: true, ok: true }], "water_q_ok");
   await say("water_quran");
   await ayahCard("25:53");
-  await say("water_end", { btn: "Альхамдулиллях" });
+  await conclusion("water_end", { btn: "Альхамдулиллях" });
   hideCap(); await award("w12_shell");
   return misses;
 }
@@ -479,7 +479,7 @@ async function chDayNight() {
   const misses = await choice("daynight_q", [{ id: "daynight_qa", icon: ICON.w12_brush }, { id: "daynight_qc", ar: true, ok: true }, { id: "daynight_qb", icon: ICON.cloud }], "daynight_q_ok");
   await say("daynight_quran");
   await ayahCard("36:40");
-  await say("daynight_end", { btn: "Субханаллах" });
+  await conclusion("daynight_end", { btn: "Субханаллах" });
   hideCap(); await award("w12_crescent");
   return misses;
 }
@@ -642,7 +642,7 @@ async function chNoSleep() {
   const misses = await choice("nosleep_q", [{ id: "nosleep_qa", icon: ICON.w12_clock }, { id: "nosleep_qb", icon: ICON.w12_torch }, { id: "nosleep_qc", ar: true, ok: true }], "nosleep_q_ok");
   await say("nosleep_quran");
   await ayahCard("2:255");
-  await say("nosleep_end", { btn: "Аллаху Акбар" });
+  await conclusion("nosleep_end", { btn: "Аллаху Акбар" });
   hideCap(); await award("w12_clock");
   return misses;
 }
@@ -784,7 +784,7 @@ async function chEnough() {
   fear.remove();
   await say("enough_quran");
   await ayahCard("65:3");
-  await say("enough_end", { btn: "Хасбуна-Ллах" });
+  await conclusion("enough_end", { btn: "Хасбуна-Ллах" });
   hideCap(); await award("w12_rainbow");
   return misses;
 }

@@ -421,31 +421,98 @@ function ayahCard(key) {
     };
     const qariBuf = i => Voice.buffer("qari", a.parts[i].n);
     a.parts.forEach((_, i) => qariBuf(i).catch(() => {}));   // скачиваем заранее, чтобы аяты шли без пауз
+    /* Аят не перематывается: «Дальше» открывается, когда дослушаны и чтец, и перевод (без звука — когда хватит времени прочитать) */
+    const heard = { ar: false, tr: false }, trText = L(a.tr);
+    const lock = keyLock(bN, () => heard.ar && heard.tr, 2500 + arLen * 25 + trText.length * 55);
+    const hint = () => { bQ.classList.toggle("glow", !heard.ar); bT.classList.toggle("glow", heard.ar && !heard.tr); };
     const run = async what => {
       Voice.stop(); const my = Voice.seq, live = () => my === Voice.seq && !closed;
+      bQ.classList.remove("glow"); bT.classList.remove("glow");
       if (what !== "tr") {
+        let all = true;
         for (let i = 0; i < a.parts.length; i++) {
-          let b; try { b = await qariBuf(i); } catch (e) { break; }
+          let b; try { b = await qariBuf(i); } catch (e) { all = false; break; }
           if (!live()) return;
           mark("ar", i); await new Promise(r => Voice.play(b, r));
           if (!live()) return;
         }
-        mark(null);
-        if (what === "qari") return;
+        mark(null); heard.ar = true;   // запись чтеца не загрузилась — не держим ребёнка: перевод всё равно звучит
+        if (!all) console.warn("qari: нет записи", key);
+        if (what === "qari") { lock.check(); hint(); return; }
         await sleep(450); if (!live()) return;
       }
       mark("tr"); const s0 = Voice.seq; await Voice.speak(a.tr);
       if (Voice.seq !== s0 + 1 || closed) return;
-      mark(null); bN.classList.add("glow");
+      mark(null); heard.tr = true; lock.check(); hint();
     };
     ov.querySelectorAll("button").forEach(b => b.onclick = () => {
       if (closed) return;
-      Snd.tap(); const act = b.dataset.a;
+      const act = b.dataset.a;
+      if (act === "next" && !lock.open()) { lock.nudge(); return; }
+      Snd.tap();
       if (act === "qari") run("qari");
       else if (act === "tr") run("tr");
-      else { closed = true; ov.style.pointerEvents = "none"; Voice.stop(); mark(null); ov.classList.remove("on"); setTimeout(() => ov.remove(), 400); res(); }
+      else { closed = true; lock.stop(); ov.style.pointerEvents = "none"; Voice.stop(); mark(null); ov.classList.remove("on"); setTimeout(() => ov.remove(), 400); res(); }
     });
-    if (Voice.on && Snd.ac) setTimeout(() => { if (!closed) run("all"); }, 700); else bN.classList.add("glow");
+    if (Voice.on && Snd.ac) setTimeout(() => { if (!closed) run("all"); }, 700); else { heard.ar = heard.tr = true; lock.wait(); }
+  });
+}
+
+/* Замок кнопки «Дальше» в конце главы: открыт, когда ready() (всё дослушано). Без звука — по таймеру на чтение.
+   Подстраховка: если звук пропал посреди (выключили, не загрузился) — откроется сама через readMs * 2 */
+function keyLock(btn, ready, readMs) {
+  let opened = false, t = null;
+  btn.classList.add("lock"); btn.setAttribute("aria-disabled", "true");
+  const unlock = () => { if (opened) return; opened = true; clearTimeout(t); btn.classList.remove("lock"); btn.removeAttribute("aria-disabled"); btn.classList.add("glow"); };
+  const fallback = setTimeout(unlock, Math.min(120000, readMs * 2 + 8000));
+  return {
+    open: () => opened,
+    check: () => { if (ready()) unlock(); },
+    wait: () => { btn.classList.add("timer"); btn.style.setProperty("--lock-ms", Math.min(30000, readMs) + "ms"); t = setTimeout(unlock, Math.min(30000, readMs)); },
+    nudge: () => { btn.classList.remove("nudge"); void btn.offsetWidth; btn.classList.add("nudge"); Snd.thud(0.15); },
+    stop: () => { clearTimeout(t); clearTimeout(fallback); },
+  };
+}
+
+/* ============ ВЫВОД ГЛАВЫ ============ */
+/* После аята — «Что мы узнали»: короткий вывод (озвучен, реплика *_end) и доводы из Корана и Сунны (window.DALIL, для родителей).
+   Тоже не перематывается: кнопка открывается, когда вывод дослушан. opt.btn — надпись на кнопке («Альхамдулиллях», «Амин»…) */
+const ICO_BOOK = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 6.5C9.6 5 6.8 4.6 3.5 5.2v12.6c3.3-.6 6.1-.2 8.5 1.3 2.4-1.5 5.2-1.9 8.5-1.3V5.2c-3.3-.6-6.1-.2-8.5 1.3z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 6.5v12.6" stroke="currentColor" stroke-width="2"/></svg>';
+function conclusion(id, opt = {}) {
+  return new Promise(res => {
+    hideCap();
+    const d = (window.DALIL || {})[id] || [];
+    const esc = s => String(s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[c]);
+    const items = d.map(x => x.ar
+      ? `<li><b>${esc(x.ref)}</b><p class="dar" dir="rtl" lang="ar">${esc(x.ar)}</p><p>${esc(x.ru)}</p></li>`
+      : `<li><b>Хадис · ${esc(x.src)} · ${esc(x.g)}</b><p>${esc(x.ru)}</p></li>`).join("");
+    const ov = el("div", "ayah concl", app,
+      `<div class="acard">${["tl", "tr", "bl", "br"].map(c => `<svg class="star8 ${c}" viewBox="0 0 40 40" aria-hidden="true">${STAR8}</svg>`).join("")}` +
+      `<p class="lbl">Что мы узнали</p><div class="abody"><p class="vyvod"></p>` +
+      (items ? `<details class="dalil"><summary>${ICO_BOOK}<span>Доводы из Корана и Сунны</span></summary><ol>${items}</ol>` +
+        `<p class="src">Вывод — пересказ смысла этих аятов и хадисов. Перевод смыслов Корана: Эльмир Кулиев.</p></details>` : "") +
+      `</div><div class="abtns"><button class="ibtn trn" data-a="say" aria-label="Послушать ещё раз">${ICO_TR}<small>Ещё раз</small></button>` +
+      `<button class="btn next" data-a="next">${esc(opt.btn || "Дальше")} ${ICO_NEXT}</button></div></div>`);
+    const txt = ov.querySelector(".vyvod"), bS = ov.querySelector(".trn"), bN = ov.querySelector(".next");
+    txt.textContent = callName(true) + L(id);
+    requestAnimationFrame(() => requestAnimationFrame(() => ov.classList.add("on")));
+    Snd.sparkle();
+    let closed = false, heard = false;
+    const lock = keyLock(bN, () => heard, 1500 + L(id).length * 60);
+    const speak = async () => {
+      Voice.stop(); const s0 = Voice.seq; txt.classList.add("on"); bS.classList.add("play");
+      await Voice.speak(id, true);
+      if (Voice.seq !== s0 + 1 || closed) return;
+      txt.classList.remove("on"); bS.classList.remove("play"); heard = true; lock.check();
+    };
+    ov.querySelectorAll("button").forEach(b => b.onclick = () => {
+      if (closed) return;
+      if (b.dataset.a === "next" && !lock.open()) { lock.nudge(); return; }
+      Snd.tap();
+      if (b.dataset.a === "say") speak();
+      else { closed = true; lock.stop(); Voice.stop(); ov.style.pointerEvents = "none"; ov.classList.remove("on"); setTimeout(() => ov.remove(), 400); res(); }
+    });
+    if (Voice.on && Snd.ac) setTimeout(() => { if (!closed) speak(); }, 600); else { heard = true; lock.wait(); }
   });
 }
 
